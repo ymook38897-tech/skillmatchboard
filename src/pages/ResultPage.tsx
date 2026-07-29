@@ -46,6 +46,7 @@ export function ResultPage({ results, onReset }: ResultPageProps) {
                 {/* Card Header - Always visible */}
                 <button
                   onClick={() => toggleExpand(result.id)}
+                  aria-expanded={isExpanded}
                   className="w-full text-left p-6 flex items-start justify-between hover:bg-gray-50 transition-colors"
                 >
                   <div className="flex-1">

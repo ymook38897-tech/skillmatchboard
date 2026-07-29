@@ -724,3 +724,211 @@
 [2m오후 10:35:22[22m [31m[1m[vite][22m[39m [31m[2m(client)[22m[39m [2m[console.error] [22mMaximum update depth exceeded. This can happen when a component calls setState inside useEffect, but useEffect either doesn't have a dependency array, or one of the dependencies changes on every render.
 [2m오후 10:35:22[22m [31m[1m[vite][22m[39m [31m[2m(client)[22m[39m [2m[console.error] [22mMaximum update depth exceeded. This can happen when a component calls setState inside useEffect, but useEffect either doesn't have a dependency array, or one of the dependencies changes on every render.
 [2m오후 10:35:22[22m [31m[1m[vite][22m[39m [31m[2m(client)[22m[39m [2m[console.error] [22mMaximum update depth exceeded. This can happen when a component calls setState inside useEffect, but useEffect either doesn't have a dependency array, or one of the dependencies changes on every render.
+[2m오후 10:43:57[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/pages/BasicInfoPage.tsx, /src/index.css[22m
+[2m오후 10:44:03[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/pages/BasicInfoPage.tsx, /src/index.css[22m
+[2m오후 10:44:06[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/pages/LoadingPage.tsx, /src/index.css[22m
+[2m오후 10:44:09[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/index.css[22m
+[2m오후 10:44:14[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/App.tsx, /src/index.css[22m
+[2m오후 10:44:18[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/App.tsx, /src/index.css[22m
+[2m오후 10:44:22[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/App.tsx, /src/index.css[22m
+[2m오후 10:44:25[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/App.tsx, /src/index.css[22m
+[2m오후 10:44:29[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/App.tsx, /src/index.css[22m
+[2m오후 10:44:36[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/pages/JobCategoryPage.tsx, /src/index.css[22m
+[2m오후 10:44:42[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/pages/JobCategoryPage.tsx, /src/index.css[22m
+[2m오후 10:44:47[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/App.tsx, /src/index.css[22m
+[2m오후 10:44:50[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mpage reload [39m[2mindex.html[22m
+[2m오후 10:44:54[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/pages/ResultPage.tsx, /src/index.css[22m
+[2m오후 10:44:59[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/pages/QuestionPage.tsx, /src/index.css[22m
+[2m오후 10:45:11[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/pages/BasicInfoPage.tsx, /src/index.css[22m
+[2m오후 10:45:14[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/pages/JobCategoryPage.tsx, /src/index.css[22m
+[2m오후 10:45:18[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/pages/QuestionPage.tsx, /src/index.css[22m
+[2m오후 10:45:23[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/index.css[22m
+[2m오후 10:45:27[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/index.css[22m
+[2m오후 10:45:30[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/index.css[22m
+[2m오후 10:45:35[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/index.css[22m
+[2m오후 11:02:42[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/index.css[22m
+Error: Cannot apply unknown utility class `m-0`
+    at onInvalidCandidate (C:\Users\dndhi\OneDrive\바탕 화면\skillmatchboard\node_modules\tailwindcss\dist\lib.js:21:1879)
+    at Oe (C:\Users\dndhi\OneDrive\바탕 화면\skillmatchboard\node_modules\tailwindcss\dist\lib.js:16:39796)
+    at C:\Users\dndhi\OneDrive\바탕 화면\skillmatchboard\node_modules\tailwindcss\dist\lib.js:21:711
+    at ai (C:\Users\dndhi\OneDrive\바탕 화면\skillmatchboard\node_modules\tailwindcss\dist\lib.js:5:1775)
+    at O (C:\Users\dndhi\OneDrive\바탕 화면\skillmatchboard\node_modules\tailwindcss\dist\lib.js:5:1377)
+    at Pe (C:\Users\dndhi\OneDrive\바탕 화면\skillmatchboard\node_modules\tailwindcss\dist\lib.js:21:172)
+    at On (C:\Users\dndhi\OneDrive\바탕 화면\skillmatchboard\node_modules\tailwindcss\dist\lib.js:38:294)
+    at async _n (C:\Users\dndhi\OneDrive\바탕 화면\skillmatchboard\node_modules\tailwindcss\dist\lib.js:38:631)
+    at async an (C:\Users\dndhi\OneDrive\바탕 화면\skillmatchboard\node_modules\@tailwindcss\node\dist\index.js:10:3415)
+    at async E (C:\Users\dndhi\OneDrive\바탕 화면\skillmatchboard\node_modules\@tailwindcss\postcss\dist\index.js:10:3996)
+[2m오후 11:02:42[22m [31m[1m[vite][22m[39m [31mInternal server error: [postcss] tailwindcss: C:/Users/dndhi/OneDrive/바탕 화면/skillmatchboard/src/index.css:1:1: Cannot apply unknown utility class `m-0`[39m
+  Plugin: [35mvite:css[39m
+  File: [36mC:/Users/dndhi/OneDrive/바탕 화면/skillmatchboard/src/index.css[39m:1:0
+[33m  1  |  @config "../tailwind.config.cjs";
+     |  ^
+  2  |  @import "tailwindcss";
+  3  |  [39m
+      at Input.error (C:\Users\dndhi\OneDrive\바탕 화면\skillmatchboard\node_modules\postcss\lib\input.js:135:16)
+      at Root.error (C:\Users\dndhi\OneDrive\바탕 화면\skillmatchboard\node_modules\postcss\lib\node.js:166:32)
+      at Object.Once (C:\Users\dndhi\OneDrive\바탕 화면\skillmatchboard\node_modules\@tailwindcss\postcss\dist\index.js:10:7013)
+      at async LazyResult.runAsync (C:\Users\dndhi\OneDrive\바탕 화면\skillmatchboard\node_modules\postcss\lib\lazy-result.js:299:11)
+      at async runPostCSS (file:///C:/Users/dndhi/OneDrive/%EB%B0%94%ED%83%95%20%ED%99%94%EB%A9%B4/skillmatchboard/node_modules/vite/dist/node/chunks/node.js:22644:19)
+      at async compilePostCSS (file:///C:/Users/dndhi/OneDrive/%EB%B0%94%ED%83%95%20%ED%99%94%EB%A9%B4/skillmatchboard/node_modules/vite/dist/node/chunks/node.js:22628:6)
+      at async compileCSS (file:///C:/Users/dndhi/OneDrive/%EB%B0%94%ED%83%95%20%ED%99%94%EB%A9%B4/skillmatchboard/node_modules/vite/dist/node/chunks/node.js:22558:26)
+      at async TransformPluginContext.handler (file:///C:/Users/dndhi/OneDrive/%EB%B0%94%ED%83%95%20%ED%99%94%EB%A9%B4/skillmatchboard/node_modules/vite/dist/node/chunks/node.js:22055:47)
+      at async EnvironmentPluginContainer.transform (file:///C:/Users/dndhi/OneDrive/%EB%B0%94%ED%83%95%20%ED%99%94%EB%A9%B4/skillmatchboard/node_modules/vite/dist/node/chunks/node.js:30201:14)
+      at async loadAndTransform (file:///C:/Users/dndhi/OneDrive/%EB%B0%94%ED%83%95%20%ED%99%94%EB%A9%B4/skillmatchboard/node_modules/vite/dist/node/chunks/node.js:20124:26)
+[2m오후 11:02:42[22m [31m[1m[vite][22m[39m [31m[2m(client)[22m[39m [2m[console.error] [22m[vite] Failed to reload /src/index.css. This could be due to syntax errors or importing non-existent modules. (see errors above)
+[2m오후 11:02:43[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/pages/StartPage.tsx, /src/index.css[22m
+Error: Cannot apply unknown utility class `m-0`
+    at onInvalidCandidate (C:\Users\dndhi\OneDrive\바탕 화면\skillmatchboard\node_modules\tailwindcss\dist\lib.js:21:1879)
+    at Oe (C:\Users\dndhi\OneDrive\바탕 화면\skillmatchboard\node_modules\tailwindcss\dist\lib.js:16:39796)
+    at C:\Users\dndhi\OneDrive\바탕 화면\skillmatchboard\node_modules\tailwindcss\dist\lib.js:21:711
+    at ai (C:\Users\dndhi\OneDrive\바탕 화면\skillmatchboard\node_modules\tailwindcss\dist\lib.js:5:1775)
+    at O (C:\Users\dndhi\OneDrive\바탕 화면\skillmatchboard\node_modules\tailwindcss\dist\lib.js:5:1377)
+    at Pe (C:\Users\dndhi\OneDrive\바탕 화면\skillmatchboard\node_modules\tailwindcss\dist\lib.js:21:172)
+    at On (C:\Users\dndhi\OneDrive\바탕 화면\skillmatchboard\node_modules\tailwindcss\dist\lib.js:38:294)
+    at async _n (C:\Users\dndhi\OneDrive\바탕 화면\skillmatchboard\node_modules\tailwindcss\dist\lib.js:38:631)
+    at async an (C:\Users\dndhi\OneDrive\바탕 화면\skillmatchboard\node_modules\@tailwindcss\node\dist\index.js:10:3415)
+    at async E (C:\Users\dndhi\OneDrive\바탕 화면\skillmatchboard\node_modules\@tailwindcss\postcss\dist\index.js:10:3996)
+[2m오후 11:02:43[22m [31m[1m[vite][22m[39m [31mInternal server error: [postcss] tailwindcss: C:/Users/dndhi/OneDrive/바탕 화면/skillmatchboard/src/index.css:1:1: Cannot apply unknown utility class `m-0`[39m
+  Plugin: [35mvite:css[39m
+  File: [36mC:/Users/dndhi/OneDrive/바탕 화면/skillmatchboard/src/index.css[39m:1:0
+[33m  1  |  @config "../tailwind.config.cjs";
+     |  ^
+  2  |  @import "tailwindcss";
+  3  |  [39m
+      at Input.error (C:\Users\dndhi\OneDrive\바탕 화면\skillmatchboard\node_modules\postcss\lib\input.js:135:16)
+      at Root.error (C:\Users\dndhi\OneDrive\바탕 화면\skillmatchboard\node_modules\postcss\lib\node.js:166:32)
+      at Object.Once (C:\Users\dndhi\OneDrive\바탕 화면\skillmatchboard\node_modules\@tailwindcss\postcss\dist\index.js:10:7013)
+      at async LazyResult.runAsync (C:\Users\dndhi\OneDrive\바탕 화면\skillmatchboard\node_modules\postcss\lib\lazy-result.js:299:11)
+      at async runPostCSS (file:///C:/Users/dndhi/OneDrive/%EB%B0%94%ED%83%95%20%ED%99%94%EB%A9%B4/skillmatchboard/node_modules/vite/dist/node/chunks/node.js:22644:19)
+      at async compilePostCSS (file:///C:/Users/dndhi/OneDrive/%EB%B0%94%ED%83%95%20%ED%99%94%EB%A9%B4/skillmatchboard/node_modules/vite/dist/node/chunks/node.js:22628:6)
+      at async compileCSS (file:///C:/Users/dndhi/OneDrive/%EB%B0%94%ED%83%95%20%ED%99%94%EB%A9%B4/skillmatchboard/node_modules/vite/dist/node/chunks/node.js:22558:26)
+      at async TransformPluginContext.handler (file:///C:/Users/dndhi/OneDrive/%EB%B0%94%ED%83%95%20%ED%99%94%EB%A9%B4/skillmatchboard/node_modules/vite/dist/node/chunks/node.js:22055:47)
+      at async EnvironmentPluginContainer.transform (file:///C:/Users/dndhi/OneDrive/%EB%B0%94%ED%83%95%20%ED%99%94%EB%A9%B4/skillmatchboard/node_modules/vite/dist/node/chunks/node.js:30201:14)
+      at async loadAndTransform (file:///C:/Users/dndhi/OneDrive/%EB%B0%94%ED%83%95%20%ED%99%94%EB%A9%B4/skillmatchboard/node_modules/vite/dist/node/chunks/node.js:20124:26)
+[2m오후 11:02:43[22m [31m[1m[vite][22m[39m [31m[2m(client)[22m[39m [2m[console.error] [22m[vite] Failed to reload /src/index.css. This could be due to syntax errors or importing non-existent modules. (see errors above)
+[2m오후 11:02:44[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/pages/BasicInfoPage.tsx, /src/index.css[22m
+Error: Cannot apply unknown utility class `m-0`
+    at onInvalidCandidate (C:\Users\dndhi\OneDrive\바탕 화면\skillmatchboard\node_modules\tailwindcss\dist\lib.js:21:1879)
+    at Oe (C:\Users\dndhi\OneDrive\바탕 화면\skillmatchboard\node_modules\tailwindcss\dist\lib.js:16:39796)
+    at C:\Users\dndhi\OneDrive\바탕 화면\skillmatchboard\node_modules\tailwindcss\dist\lib.js:21:711
+    at ai (C:\Users\dndhi\OneDrive\바탕 화면\skillmatchboard\node_modules\tailwindcss\dist\lib.js:5:1775)
+    at O (C:\Users\dndhi\OneDrive\바탕 화면\skillmatchboard\node_modules\tailwindcss\dist\lib.js:5:1377)
+    at Pe (C:\Users\dndhi\OneDrive\바탕 화면\skillmatchboard\node_modules\tailwindcss\dist\lib.js:21:172)
+    at On (C:\Users\dndhi\OneDrive\바탕 화면\skillmatchboard\node_modules\tailwindcss\dist\lib.js:38:294)
+    at async _n (C:\Users\dndhi\OneDrive\바탕 화면\skillmatchboard\node_modules\tailwindcss\dist\lib.js:38:631)
+    at async an (C:\Users\dndhi\OneDrive\바탕 화면\skillmatchboard\node_modules\@tailwindcss\node\dist\index.js:10:3415)
+    at async E (C:\Users\dndhi\OneDrive\바탕 화면\skillmatchboard\node_modules\@tailwindcss\postcss\dist\index.js:10:3996)
+[2m오후 11:02:44[22m [31m[1m[vite][22m[39m [31mInternal server error: [postcss] tailwindcss: C:/Users/dndhi/OneDrive/바탕 화면/skillmatchboard/src/index.css:1:1: Cannot apply unknown utility class `m-0`[39m
+  Plugin: [35mvite:css[39m
+  File: [36mC:/Users/dndhi/OneDrive/바탕 화면/skillmatchboard/src/index.css[39m:1:0
+[33m  1  |  @config "../tailwind.config.cjs";
+     |  ^
+  2  |  @import "tailwindcss";
+  3  |  [39m
+      at Input.error (C:\Users\dndhi\OneDrive\바탕 화면\skillmatchboard\node_modules\postcss\lib\input.js:135:16)
+      at Root.error (C:\Users\dndhi\OneDrive\바탕 화면\skillmatchboard\node_modules\postcss\lib\node.js:166:32)
+      at Object.Once (C:\Users\dndhi\OneDrive\바탕 화면\skillmatchboard\node_modules\@tailwindcss\postcss\dist\index.js:10:7013)
+      at async LazyResult.runAsync (C:\Users\dndhi\OneDrive\바탕 화면\skillmatchboard\node_modules\postcss\lib\lazy-result.js:299:11)
+      at async runPostCSS (file:///C:/Users/dndhi/OneDrive/%EB%B0%94%ED%83%95%20%ED%99%94%EB%A9%B4/skillmatchboard/node_modules/vite/dist/node/chunks/node.js:22644:19)
+      at async compilePostCSS (file:///C:/Users/dndhi/OneDrive/%EB%B0%94%ED%83%95%20%ED%99%94%EB%A9%B4/skillmatchboard/node_modules/vite/dist/node/chunks/node.js:22628:6)
+      at async compileCSS (file:///C:/Users/dndhi/OneDrive/%EB%B0%94%ED%83%95%20%ED%99%94%EB%A9%B4/skillmatchboard/node_modules/vite/dist/node/chunks/node.js:22558:26)
+      at async TransformPluginContext.handler (file:///C:/Users/dndhi/OneDrive/%EB%B0%94%ED%83%95%20%ED%99%94%EB%A9%B4/skillmatchboard/node_modules/vite/dist/node/chunks/node.js:22055:47)
+      at async EnvironmentPluginContainer.transform (file:///C:/Users/dndhi/OneDrive/%EB%B0%94%ED%83%95%20%ED%99%94%EB%A9%B4/skillmatchboard/node_modules/vite/dist/node/chunks/node.js:30201:14)
+      at async loadAndTransform (file:///C:/Users/dndhi/OneDrive/%EB%B0%94%ED%83%95%20%ED%99%94%EB%A9%B4/skillmatchboard/node_modules/vite/dist/node/chunks/node.js:20124:26)
+[2m오후 11:02:45[22m [31m[1m[vite][22m[39m [31m[2m(client)[22m[39m [2m[console.error] [22m[vite] Failed to reload /src/index.css. This could be due to syntax errors or importing non-existent modules. (see errors above)
+[2m오후 11:02:46[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/index.css[22m
+Error: Cannot apply unknown utility class `m-0`
+    at onInvalidCandidate (C:\Users\dndhi\OneDrive\바탕 화면\skillmatchboard\node_modules\tailwindcss\dist\lib.js:21:1879)
+    at Oe (C:\Users\dndhi\OneDrive\바탕 화면\skillmatchboard\node_modules\tailwindcss\dist\lib.js:16:39796)
+    at C:\Users\dndhi\OneDrive\바탕 화면\skillmatchboard\node_modules\tailwindcss\dist\lib.js:21:711
+    at ai (C:\Users\dndhi\OneDrive\바탕 화면\skillmatchboard\node_modules\tailwindcss\dist\lib.js:5:1775)
+    at O (C:\Users\dndhi\OneDrive\바탕 화면\skillmatchboard\node_modules\tailwindcss\dist\lib.js:5:1377)
+    at Pe (C:\Users\dndhi\OneDrive\바탕 화면\skillmatchboard\node_modules\tailwindcss\dist\lib.js:21:172)
+    at On (C:\Users\dndhi\OneDrive\바탕 화면\skillmatchboard\node_modules\tailwindcss\dist\lib.js:38:294)
+    at async _n (C:\Users\dndhi\OneDrive\바탕 화면\skillmatchboard\node_modules\tailwindcss\dist\lib.js:38:631)
+    at async an (C:\Users\dndhi\OneDrive\바탕 화면\skillmatchboard\node_modules\@tailwindcss\node\dist\index.js:10:3415)
+    at async E (C:\Users\dndhi\OneDrive\바탕 화면\skillmatchboard\node_modules\@tailwindcss\postcss\dist\index.js:10:3996)
+[2m오후 11:02:46[22m [31m[1m[vite][22m[39m [31mInternal server error: [postcss] tailwindcss: C:/Users/dndhi/OneDrive/바탕 화면/skillmatchboard/src/index.css:1:1: Cannot apply unknown utility class `m-0`[39m
+  Plugin: [35mvite:css[39m
+  File: [36mC:/Users/dndhi/OneDrive/바탕 화면/skillmatchboard/src/index.css[39m:1:0
+[33m  1  |  @config "../tailwind.config.cjs";
+     |  ^
+  2  |  @import "tailwindcss";
+  3  |  [39m
+      at Input.error (C:\Users\dndhi\OneDrive\바탕 화면\skillmatchboard\node_modules\postcss\lib\input.js:135:16)
+      at Root.error (C:\Users\dndhi\OneDrive\바탕 화면\skillmatchboard\node_modules\postcss\lib\node.js:166:32)
+      at Object.Once (C:\Users\dndhi\OneDrive\바탕 화면\skillmatchboard\node_modules\@tailwindcss\postcss\dist\index.js:10:7013)
+      at async LazyResult.runAsync (C:\Users\dndhi\OneDrive\바탕 화면\skillmatchboard\node_modules\postcss\lib\lazy-result.js:299:11)
+      at async runPostCSS (file:///C:/Users/dndhi/OneDrive/%EB%B0%94%ED%83%95%20%ED%99%94%EB%A9%B4/skillmatchboard/node_modules/vite/dist/node/chunks/node.js:22644:19)
+      at async compilePostCSS (file:///C:/Users/dndhi/OneDrive/%EB%B0%94%ED%83%95%20%ED%99%94%EB%A9%B4/skillmatchboard/node_modules/vite/dist/node/chunks/node.js:22628:6)
+      at async compileCSS (file:///C:/Users/dndhi/OneDrive/%EB%B0%94%ED%83%95%20%ED%99%94%EB%A9%B4/skillmatchboard/node_modules/vite/dist/node/chunks/node.js:22558:26)
+      at async TransformPluginContext.handler (file:///C:/Users/dndhi/OneDrive/%EB%B0%94%ED%83%95%20%ED%99%94%EB%A9%B4/skillmatchboard/node_modules/vite/dist/node/chunks/node.js:22055:47)
+      at async EnvironmentPluginContainer.transform (file:///C:/Users/dndhi/OneDrive/%EB%B0%94%ED%83%95%20%ED%99%94%EB%A9%B4/skillmatchboard/node_modules/vite/dist/node/chunks/node.js:30201:14)
+      at async loadAndTransform (file:///C:/Users/dndhi/OneDrive/%EB%B0%94%ED%83%95%20%ED%99%94%EB%A9%B4/skillmatchboard/node_modules/vite/dist/node/chunks/node.js:20124:26)
+[2m오후 11:02:46[22m [31m[1m[vite][22m[39m [31m[2m(client)[22m[39m [2m[console.error] [22m[vite] Failed to reload /src/index.css. This could be due to syntax errors or importing non-existent modules. (see errors above)
+[2m오후 11:02:47[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/App.tsx, /src/index.css[22m
+Error: Cannot apply unknown utility class `m-0`
+    at onInvalidCandidate (C:\Users\dndhi\OneDrive\바탕 화면\skillmatchboard\node_modules\tailwindcss\dist\lib.js:21:1879)
+    at Oe (C:\Users\dndhi\OneDrive\바탕 화면\skillmatchboard\node_modules\tailwindcss\dist\lib.js:16:39796)
+    at C:\Users\dndhi\OneDrive\바탕 화면\skillmatchboard\node_modules\tailwindcss\dist\lib.js:21:711
+    at ai (C:\Users\dndhi\OneDrive\바탕 화면\skillmatchboard\node_modules\tailwindcss\dist\lib.js:5:1775)
+    at O (C:\Users\dndhi\OneDrive\바탕 화면\skillmatchboard\node_modules\tailwindcss\dist\lib.js:5:1377)
+    at Pe (C:\Users\dndhi\OneDrive\바탕 화면\skillmatchboard\node_modules\tailwindcss\dist\lib.js:21:172)
+    at On (C:\Users\dndhi\OneDrive\바탕 화면\skillmatchboard\node_modules\tailwindcss\dist\lib.js:38:294)
+    at async _n (C:\Users\dndhi\OneDrive\바탕 화면\skillmatchboard\node_modules\tailwindcss\dist\lib.js:38:631)
+    at async an (C:\Users\dndhi\OneDrive\바탕 화면\skillmatchboard\node_modules\@tailwindcss\node\dist\index.js:10:3415)
+    at async E (C:\Users\dndhi\OneDrive\바탕 화면\skillmatchboard\node_modules\@tailwindcss\postcss\dist\index.js:10:3996)
+[2m오후 11:02:47[22m [31m[1m[vite][22m[39m [31mInternal server error: [postcss] tailwindcss: C:/Users/dndhi/OneDrive/바탕 화면/skillmatchboard/src/index.css:1:1: Cannot apply unknown utility class `m-0`[39m
+  Plugin: [35mvite:css[39m
+  File: [36mC:/Users/dndhi/OneDrive/바탕 화면/skillmatchboard/src/index.css[39m:1:0
+[33m  1  |  @config "../tailwind.config.cjs";
+     |  ^
+  2  |  @import "tailwindcss";
+  3  |  [39m
+      at Input.error (C:\Users\dndhi\OneDrive\바탕 화면\skillmatchboard\node_modules\postcss\lib\input.js:135:16)
+      at Root.error (C:\Users\dndhi\OneDrive\바탕 화면\skillmatchboard\node_modules\postcss\lib\node.js:166:32)
+      at Object.Once (C:\Users\dndhi\OneDrive\바탕 화면\skillmatchboard\node_modules\@tailwindcss\postcss\dist\index.js:10:7013)
+      at async LazyResult.runAsync (C:\Users\dndhi\OneDrive\바탕 화면\skillmatchboard\node_modules\postcss\lib\lazy-result.js:299:11)
+      at async runPostCSS (file:///C:/Users/dndhi/OneDrive/%EB%B0%94%ED%83%95%20%ED%99%94%EB%A9%B4/skillmatchboard/node_modules/vite/dist/node/chunks/node.js:22644:19)
+      at async compilePostCSS (file:///C:/Users/dndhi/OneDrive/%EB%B0%94%ED%83%95%20%ED%99%94%EB%A9%B4/skillmatchboard/node_modules/vite/dist/node/chunks/node.js:22628:6)
+      at async compileCSS (file:///C:/Users/dndhi/OneDrive/%EB%B0%94%ED%83%95%20%ED%99%94%EB%A9%B4/skillmatchboard/node_modules/vite/dist/node/chunks/node.js:22558:26)
+      at async TransformPluginContext.handler (file:///C:/Users/dndhi/OneDrive/%EB%B0%94%ED%83%95%20%ED%99%94%EB%A9%B4/skillmatchboard/node_modules/vite/dist/node/chunks/node.js:22055:47)
+      at async EnvironmentPluginContainer.transform (file:///C:/Users/dndhi/OneDrive/%EB%B0%94%ED%83%95%20%ED%99%94%EB%A9%B4/skillmatchboard/node_modules/vite/dist/node/chunks/node.js:30201:14)
+      at async loadAndTransform (file:///C:/Users/dndhi/OneDrive/%EB%B0%94%ED%83%95%20%ED%99%94%EB%A9%B4/skillmatchboard/node_modules/vite/dist/node/chunks/node.js:20124:26)
+[2m오후 11:02:47[22m [31m[1m[vite][22m[39m [31m[2m(client)[22m[39m [2m[console.error] [22m[vite] Failed to reload /src/index.css. This could be due to syntax errors or importing non-existent modules. (see errors above)
+[2m오후 11:03:19[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/index.css[22m
+Error: Cannot apply unknown utility class `m-0`
+    at onInvalidCandidate (C:\Users\dndhi\OneDrive\바탕 화면\skillmatchboard\node_modules\tailwindcss\dist\lib.js:21:1879)
+    at Oe (C:\Users\dndhi\OneDrive\바탕 화면\skillmatchboard\node_modules\tailwindcss\dist\lib.js:16:39796)
+    at C:\Users\dndhi\OneDrive\바탕 화면\skillmatchboard\node_modules\tailwindcss\dist\lib.js:21:711
+    at ai (C:\Users\dndhi\OneDrive\바탕 화면\skillmatchboard\node_modules\tailwindcss\dist\lib.js:5:1775)
+    at O (C:\Users\dndhi\OneDrive\바탕 화면\skillmatchboard\node_modules\tailwindcss\dist\lib.js:5:1377)
+    at Pe (C:\Users\dndhi\OneDrive\바탕 화면\skillmatchboard\node_modules\tailwindcss\dist\lib.js:21:172)
+    at On (C:\Users\dndhi\OneDrive\바탕 화면\skillmatchboard\node_modules\tailwindcss\dist\lib.js:38:294)
+    at async _n (C:\Users\dndhi\OneDrive\바탕 화면\skillmatchboard\node_modules\tailwindcss\dist\lib.js:38:631)
+    at async an (C:\Users\dndhi\OneDrive\바탕 화면\skillmatchboard\node_modules\@tailwindcss\node\dist\index.js:10:3415)
+    at async E (C:\Users\dndhi\OneDrive\바탕 화면\skillmatchboard\node_modules\@tailwindcss\postcss\dist\index.js:10:3996)
+[2m오후 11:03:19[22m [31m[1m[vite][22m[39m [31mInternal server error: [postcss] tailwindcss: C:/Users/dndhi/OneDrive/바탕 화면/skillmatchboard/src/index.css:1:1: Cannot apply unknown utility class `m-0`[39m
+  Plugin: [35mvite:css[39m
+  File: [36mC:/Users/dndhi/OneDrive/바탕 화면/skillmatchboard/src/index.css[39m:1:0
+[33m  1  |  @config "../tailwind.config.cjs";
+     |  ^
+  2  |  @import "tailwindcss";
+  3  |  [39m
+      at Input.error (C:\Users\dndhi\OneDrive\바탕 화면\skillmatchboard\node_modules\postcss\lib\input.js:135:16)
+      at Root.error (C:\Users\dndhi\OneDrive\바탕 화면\skillmatchboard\node_modules\postcss\lib\node.js:166:32)
+      at Object.Once (C:\Users\dndhi\OneDrive\바탕 화면\skillmatchboard\node_modules\@tailwindcss\postcss\dist\index.js:10:7013)
+      at async LazyResult.runAsync (C:\Users\dndhi\OneDrive\바탕 화면\skillmatchboard\node_modules\postcss\lib\lazy-result.js:299:11)
+      at async runPostCSS (file:///C:/Users/dndhi/OneDrive/%EB%B0%94%ED%83%95%20%ED%99%94%EB%A9%B4/skillmatchboard/node_modules/vite/dist/node/chunks/node.js:22644:19)
+      at async compilePostCSS (file:///C:/Users/dndhi/OneDrive/%EB%B0%94%ED%83%95%20%ED%99%94%EB%A9%B4/skillmatchboard/node_modules/vite/dist/node/chunks/node.js:22628:6)
+      at async compileCSS (file:///C:/Users/dndhi/OneDrive/%EB%B0%94%ED%83%95%20%ED%99%94%EB%A9%B4/skillmatchboard/node_modules/vite/dist/node/chunks/node.js:22558:26)
+      at async TransformPluginContext.handler (file:///C:/Users/dndhi/OneDrive/%EB%B0%94%ED%83%95%20%ED%99%94%EB%A9%B4/skillmatchboard/node_modules/vite/dist/node/chunks/node.js:22055:47)
+      at async EnvironmentPluginContainer.transform (file:///C:/Users/dndhi/OneDrive/%EB%B0%94%ED%83%95%20%ED%99%94%EB%A9%B4/skillmatchboard/node_modules/vite/dist/node/chunks/node.js:30201:14)
+      at async loadAndTransform (file:///C:/Users/dndhi/OneDrive/%EB%B0%94%ED%83%95%20%ED%99%94%EB%A9%B4/skillmatchboard/node_modules/vite/dist/node/chunks/node.js:20124:26)
+[2m오후 11:03:19[22m [31m[1m[vite][22m[39m [31m[2m(client)[22m[39m [2m[console.error] [22m[vite] Failed to reload /src/index.css. This could be due to syntax errors or importing non-existent modules. (see errors above)
+[2m오후 11:03:30[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/index.css[22m
+
+A PostCSS plugin did not pass the `from` option to `postcss.parse`. This may cause imported assets to be incorrectly transformed. If you've recently added a PostCSS plugin that raised this warning, please contact the package author to fix the issue.
+[2m오후 11:03:34[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/index.css[22m
+[2m오후 11:05:35[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/index.css[22m
+[2m오후 11:05:42[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/index.css[22m

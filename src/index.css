@@ -1,4 +1,11 @@
 @import "tailwindcss";
+@config "../tailwind.config.cjs";
+
+@layer utilities {
+  .gradient-text {
+    @apply bg-gradient-to-r from-primary-600 to-accent-600 bg-clip-text text-transparent;
+  }
+}
 
 @layer base {
   * {

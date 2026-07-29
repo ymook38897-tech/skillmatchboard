@@ -1,5 +1,5 @@
 export type AgeGroup = '10대' | '20대' | '30대' | '40대' | '50대' | '60대 이상';
-export type Gender = '남성' | '여성' | '선택하지 않음';
+export type Gender = '남성' | '여성';
 
 export interface QuestionAnswer {
   questionId: number;

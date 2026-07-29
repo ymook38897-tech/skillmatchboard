@@ -17,7 +17,12 @@ export function LoadingPage({ onComplete }: LoadingPageProps) {
           return 100
         }
         const increment = Math.random() * 30
-        return Math.min(prev + increment, 99)
+        const next = Math.min(prev + increment, 100)
+        if (next >= 100) {
+          clearInterval(interval)
+          setTimeout(onComplete, 500)
+        }
+        return next
       })
     }, 500)
 

@@ -10,6 +10,8 @@ interface JobCategoryPageProps {
   onJobCategoryUnknown: (unknown: boolean) => void
   onNext: () => void
   onPrev: () => void
+  currentPage: number
+  onPageChange: (page: number) => void
 }
 
 export function JobCategoryPage({
@@ -19,8 +21,9 @@ export function JobCategoryPage({
   onJobCategoryUnknown,
   onNext,
   onPrev,
+  currentPage,
+  onPageChange,
 }: JobCategoryPageProps) {
-  const [currentPage, setCurrentPage] = useState(0)
   const itemsPerPage = 4
 
   const totalPages = Math.ceil(JOB_CATEGORIES.length / itemsPerPage)
@@ -49,11 +52,11 @@ export function JobCategoryPage({
   }
 
   const handleNextPage = () => {
-    setCurrentPage((prev) => (prev + 1) % totalPages)
+    onPageChange((currentPage + 1) % totalPages)
   }
 
   const handlePrevPage = () => {
-    setCurrentPage((prev) => (prev - 1 + totalPages) % totalPages)
+    onPageChange((currentPage - 1 + totalPages) % totalPages)
   }
 
   return (
@@ -80,6 +83,7 @@ export function JobCategoryPage({
                   key={category.id}
                   onClick={() => handleCategoryClick(category.id)}
                   disabled={isDisabled}
+                  aria-pressed={isSelected}
                   className={`transition-all duration-200 p-6 rounded-xl border-2 font-semibold text-lg flex items-center justify-between ${
                     isSelected
                       ? 'bg-primary-50 border-primary-600 text-primary-600'

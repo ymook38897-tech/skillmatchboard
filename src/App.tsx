@@ -14,6 +14,7 @@ type Page = 'start' | 'basicInfo' | 'jobCategory' | 'question' | 'loading' | 're
 function App() {
   const [currentPage, setCurrentPage] = useState<Page>('start')
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0)
+  const [currentJobCategoryPage, setCurrentJobCategoryPage] = useState(0)
   const [results, setResults] = useState<Result[]>([])
 
   const [formData, setFormData] = useState<UserFormData>({
@@ -42,11 +43,13 @@ function App() {
     setFormData((prev) => ({ ...prev, gender }))
   }
 
-  const handleBasicInfoNext = () => {
+  const handleBasicInfoComplete = () => {
+    window.scrollTo(0, 0)
     setCurrentPage('jobCategory')
   }
 
   const handleBasicInfoPrev = () => {
+    window.scrollTo(0, 0)
     setCurrentPage('start')
   }
 
@@ -68,11 +71,13 @@ function App() {
   }
 
   const handleJobCategoryNext = () => {
+    window.scrollTo(0, 0)
     setCurrentPage('question')
     setCurrentQuestionIndex(0)
   }
 
   const handleJobCategoryPrev = () => {
+    window.scrollTo(0, 0)
     setCurrentPage('basicInfo')
   }
 
@@ -111,14 +116,13 @@ function App() {
 
   const handleQuestionPrev = () => {
     if (currentQuestionIndex === 0) {
+      window.scrollTo(0, 0)
       setCurrentPage('jobCategory')
+      setCurrentJobCategoryPage(0)
     } else {
       // Delete all answers after current question
-      const newAnswers = formData.answers.map((a) =>
-        a.questionId > QUESTIONS[currentQuestionIndex - 1].id
-          ? { ...a, selectedOptionId: null, isUnknown: false }
-          : a
-      )
+      const currentQuestionId = QUESTIONS[currentQuestionIndex - 1].id
+      const newAnswers = formData.answers.filter((a) => a.questionId <= currentQuestionId)
       setFormData((prev) => ({ ...prev, answers: newAnswers }))
       setCurrentQuestionIndex((prev) => prev - 1)
     }
@@ -165,7 +169,7 @@ function App() {
           selectedGender={formData.gender}
           onAgeGroupChange={handleAgeGroupChange}
           onGenderChange={handleGenderChange}
-          onNext={handleBasicInfoNext}
+          onNext={handleBasicInfoComplete}
           onPrev={handleBasicInfoPrev}
         />
       )}
@@ -178,6 +182,8 @@ function App() {
           onJobCategoryUnknown={handleJobCategoryUnknown}
           onNext={handleJobCategoryNext}
           onPrev={handleJobCategoryPrev}
+          currentPage={currentJobCategoryPage}
+          onPageChange={setCurrentJobCategoryPage}
         />
       )}
 

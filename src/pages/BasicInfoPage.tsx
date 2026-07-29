@@ -1,9 +1,9 @@
-import { useEffect, useRef, useState } from 'react'
-import { NavigationButtons } from '../components/common/NavigationButtons'
+import { useEffect, useRef } from 'react'
+import { Button } from '../components/common/Button'
 import { AgeGroup, Gender } from '../types'
 
 const AGE_GROUPS: AgeGroup[] = ['10대', '20대', '30대', '40대', '50대', '60대 이상']
-const GENDERS: Gender[] = ['남성', '여성', '선택하지 않음']
+const GENDERS: Gender[] = ['남성', '여성']
 
 interface BasicInfoPageProps {
   selectedAgeGroup: AgeGroup | null
@@ -22,62 +22,43 @@ export function BasicInfoPage({
   onNext,
   onPrev,
 }: BasicInfoPageProps) {
-  const [scrollIndex, setScrollIndex] = useState(
-    selectedAgeGroup ? AGE_GROUPS.indexOf(selectedAgeGroup) : 2
-  )
-  const scrollContainerRef = useRef<HTMLDivElement>(null)
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const wheelTimeoutRef = useRef<any>(null)
+  const navigationPendingRef = useRef(false)
+  const navigationTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
-  const isNextDisabled = selectedAgeGroup === null
-
-  // Scroll to center selected item
   useEffect(() => {
-    if (scrollContainerRef.current) {
-      const itemHeight = 80 + 16 // height + gap
-      const containerHeight = scrollContainerRef.current.clientHeight
-      const scrollTarget = itemHeight * scrollIndex - containerHeight / 2 + itemHeight / 2
-      scrollContainerRef.current.scrollTop = scrollTarget
+    return () => {
+      if (navigationTimeoutRef.current) {
+        clearTimeout(navigationTimeoutRef.current)
+      }
     }
-  }, [scrollIndex])
+  }, [])
 
-  // Update selected age group when scroll changes
-  useEffect(() => {
-    onAgeGroupChange(AGE_GROUPS[scrollIndex])
-  }, [scrollIndex, onAgeGroupChange])
-
-  const handleWheel = (e: React.WheelEvent<HTMLDivElement>) => {
-    e.preventDefault()
-
-    if (wheelTimeoutRef.current) {
-      clearTimeout(wheelTimeoutRef.current)
+  const scheduleNextIfComplete = (
+    ageGroup: AgeGroup | null,
+    gender: Gender | null,
+  ) => {
+    if (!ageGroup || !gender || navigationPendingRef.current) {
+      return
     }
 
-    const direction = e.deltaY > 0 ? 1 : -1
-    setScrollIndex((prev) => {
-      let newIndex = prev + direction
-      if (newIndex < 0) newIndex = AGE_GROUPS.length - 1
-      if (newIndex >= AGE_GROUPS.length) newIndex = 0
-      return newIndex
-    })
-
-    wheelTimeoutRef.current = setTimeout(() => {
-      // Allow next wheel event after delay
-    }, 100)
+    navigationPendingRef.current = true
+    navigationTimeoutRef.current = setTimeout(onNext, 120)
   }
 
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
-    if (e.key === 'ArrowDown' || e.key === 'ArrowRight') {
-      e.preventDefault()
-      setScrollIndex((prev) => (prev + 1) % AGE_GROUPS.length)
-    } else if (e.key === 'ArrowUp' || e.key === 'ArrowLeft') {
-      e.preventDefault()
-      setScrollIndex((prev) => (prev - 1 + AGE_GROUPS.length) % AGE_GROUPS.length)
-    }
+  const handleAgeGroupSelect = (ageGroup: AgeGroup) => {
+    if (navigationPendingRef.current) return
+    onAgeGroupChange(ageGroup)
+    scheduleNextIfComplete(ageGroup, selectedGender)
+  }
+
+  const handleGenderSelect = (gender: Gender) => {
+    if (navigationPendingRef.current) return
+    onGenderChange(gender)
+    scheduleNextIfComplete(selectedAgeGroup, gender)
   }
 
   return (
-    <div className="min-h-screen bg-white flex flex-col pb-32 px-4 sm:px-6 lg:px-8 pt-8">
+    <div className="min-h-screen bg-white flex flex-col pb-24 px-4 sm:px-6 lg:px-8 pt-8">
       <div className="max-w-2xl mx-auto w-full flex-1">
         {/* Header */}
         <div className="mb-12">
@@ -90,60 +71,63 @@ export function BasicInfoPage({
         </div>
 
         {/* Age Group Selection */}
-        <div className="mb-12">
-          <h2 className="text-xl font-semibold text-gray-900 mb-6">
+        <div className="mb-10">
+          <h2 id="age-group-label" className="text-xl font-semibold text-gray-900 mb-6">
             연령대를 선택해주세요
           </h2>
           <div
-            ref={scrollContainerRef}
-            onWheel={handleWheel}
-            onKeyDown={handleKeyDown}
-            tabIndex={0}
-            className="h-80 overflow-hidden flex flex-col items-center justify-center focus:outline-none"
+            role="group"
+            aria-labelledby="age-group-label"
+            className="max-h-80 max-w-sm mx-auto overflow-y-auto overscroll-contain touch-pan-y rounded-xl border border-gray-200 bg-gray-50 p-3 sm:p-4"
           >
-            <div className="flex flex-col items-center justify-center gap-4">
-              {AGE_GROUPS.map((age, idx) => {
-                const isSelected = idx === scrollIndex
+            <div className="w-full flex flex-col gap-3">
+              {AGE_GROUPS.map((age) => {
+                const isSelected = selectedAgeGroup === age
                 return (
                   <button
+                    type="button"
                     key={age}
-                    onClick={() => setScrollIndex(idx)}
-                    className={`transition-all duration-300 font-semibold text-center w-full sm:w-64 py-5 px-6 rounded-xl border-2 ${
+                    onClick={() => handleAgeGroupSelect(age)}
+                    aria-pressed={isSelected}
+                    className={`min-h-16 w-full transition-colors duration-200 font-semibold text-center py-4 px-6 rounded-xl border-2 flex items-center justify-center gap-3 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-600 focus-visible:ring-offset-2 ${
                       isSelected
-                        ? 'bg-primary-600 border-primary-600 text-white text-2xl scale-110'
-                        : 'bg-white border-gray-200 text-gray-600 text-lg'
+                        ? 'bg-primary-50 border-primary-600 text-primary-700 shadow-sm'
+                        : 'bg-white border-gray-200 text-gray-700 hover:border-primary-300'
                     }`}
                   >
-                    {age}
+                    {isSelected && <span aria-hidden="true" className="text-lg">✓</span>}
+                    <span>{age}</span>
                   </button>
                 )
               })}
             </div>
           </div>
           <p className="text-center text-gray-500 text-sm mt-4">
-            마우스 휠, 화살표 키, 또는 탭을 눌러 선택할 수 있습니다
+            목록을 스크롤한 뒤 원하는 연령대 버튼을 직접 선택해주세요
           </p>
         </div>
 
         {/* Gender Selection */}
         <div>
-          <h2 className="text-xl font-semibold text-gray-900 mb-6">
-            성별을 선택해주세요 <span className="text-gray-400 text-base font-normal">(선택사항)</span>
+          <h2 id="gender-label" className="text-xl font-semibold text-gray-900 mb-6">
+            성별을 선택해주세요
           </h2>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div role="group" aria-labelledby="gender-label" className="grid grid-cols-2 gap-4">
             {GENDERS.map((gender) => {
               const isSelected = selectedGender === gender
               return (
                 <button
+                  type="button"
                   key={gender}
-                  onClick={() => onGenderChange(gender)}
-                  className={`transition-all duration-200 font-semibold py-6 px-4 rounded-xl border-2 flex items-center justify-center gap-3 ${
+                  onClick={() => handleGenderSelect(gender)}
+                  aria-pressed={isSelected}
+                  className={`min-h-16 transition-colors duration-200 font-semibold py-4 px-4 rounded-xl border-2 flex items-center justify-center gap-3 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-600 focus-visible:ring-offset-2 ${
                     isSelected
-                      ? 'bg-primary-50 border-primary-600 text-primary-600'
-                      : 'bg-white border-gray-300 text-gray-700 hover:border-gray-400'
+                      ? 'bg-primary-50 border-primary-600 text-primary-700 shadow-sm'
+                      : 'bg-white border-gray-300 text-gray-700 hover:border-primary-300'
                   }`}
                 >
-                  {isSelected && <span className="text-lg">✓</span>}
+                  {isSelected && <span aria-hidden="true" className="text-lg">✓</span>}
                   {gender}
                 </button>
               )
@@ -152,14 +136,20 @@ export function BasicInfoPage({
         </div>
       </div>
 
-      {/* Navigation Buttons */}
-      <NavigationButtons
-        onPrev={onPrev}
-        onNext={onNext}
-        nextDisabled={isNextDisabled}
-        prevLabel="이전"
-        nextLabel="다음"
-      />
+      {/* Previous Button */}
+      <div className="fixed z-30 bottom-0 left-0 right-0 bg-white border-t border-gray-200 px-4 py-4 pb-[max(1rem,env(safe-area-inset-bottom))] sm:px-6 lg:px-8">
+        <div className="max-w-2xl mx-auto flex justify-center">
+          <Button
+            type="button"
+            variant="outline"
+            size="lg"
+            onClick={onPrev}
+            className="w-full sm:w-48"
+          >
+            이전
+          </Button>
+        </div>
+      </div>
     </div>
   )
 }

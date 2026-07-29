@@ -48,16 +48,6 @@ module.exports = {
         '4xl': ['36px', { lineHeight: '40px' }],
         '5xl': ['48px', { lineHeight: '52px' }],
       },
-      spacing: {
-        xs: '4px',
-        sm: '8px',
-        md: '12px',
-        lg: '16px',
-        xl: '24px',
-        '2xl': '32px',
-        '3xl': '48px',
-        '4xl': '64px',
-      },
       borderRadius: {
         sm: '4px',
         md: '8px',

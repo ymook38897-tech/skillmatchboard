@@ -55,7 +55,14 @@ export function QuestionPage({
               {Math.round(((currentQuestionIndex + 1) / QUESTIONS.length) * 100)}%
             </span>
           </div>
-          <div className="w-full bg-gray-200 rounded-full h-2">
+          <div
+            className="w-full bg-gray-200 rounded-full h-2"
+            role="progressbar"
+            aria-valuenow={Math.round(((currentQuestionIndex + 1) / QUESTIONS.length) * 100)}
+            aria-valuemin={0}
+            aria-valuemax={100}
+            aria-label={`진행 상황: ${currentQuestionIndex + 1}/${QUESTIONS.length}`}
+          >
             <div
               className="bg-gradient-to-r from-primary-600 to-accent-600 h-2 rounded-full transition-all duration-300"
               style={{
@@ -82,6 +89,7 @@ export function QuestionPage({
                 key={option.id}
                 onClick={() => onAnswerSelect(question.id, option.id)}
                 disabled={isDisabled}
+                aria-pressed={isSelected}
                 className={`w-full transition-all duration-200 p-5 rounded-xl border-2 text-left font-semibold flex items-center justify-between ${
                   isSelected
                     ? 'bg-primary-50 border-primary-600 text-primary-600'
