@@ -120,10 +120,17 @@ function App() {
       setCurrentPage('jobCategory')
       setCurrentJobCategoryPage(0)
     } else {
-      // Delete all answers after current question
-      const currentQuestionId = QUESTIONS[currentQuestionIndex - 1].id
-      const newAnswers = formData.answers.filter((a) => a.questionId <= currentQuestionId)
-      setFormData((prev) => ({ ...prev, answers: newAnswers }))
+      const questionIdsToReset = new Set(
+        QUESTIONS.slice(currentQuestionIndex).map((question) => question.id)
+      )
+      setFormData((prev) => ({
+        ...prev,
+        answers: prev.answers.map((answer) =>
+          questionIdsToReset.has(answer.questionId)
+            ? { ...answer, selectedOptionId: null, isUnknown: false }
+            : answer
+        ),
+      }))
       setCurrentQuestionIndex((prev) => prev - 1)
     }
   }

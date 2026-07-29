@@ -32,6 +32,8 @@ export function JobCategoryPage({
   const displayedCategories = JOB_CATEGORIES.slice(startIdx, endIdx)
 
   const isNextDisabled = selectedJobCategory === null && !jobCategoryUnknown
+  const isFirstPage = currentPage === 0
+  const isLastPage = currentPage === totalPages - 1
 
   const handleCategoryClick = (id: string) => {
     if (jobCategoryUnknown) return
@@ -52,11 +54,15 @@ export function JobCategoryPage({
   }
 
   const handleNextPage = () => {
-    onPageChange((currentPage + 1) % totalPages)
+    if (!isLastPage) {
+      onPageChange(currentPage + 1)
+    }
   }
 
   const handlePrevPage = () => {
-    onPageChange((currentPage - 1 + totalPages) % totalPages)
+    if (!isFirstPage) {
+      onPageChange(currentPage - 1)
+    }
   }
 
   return (
@@ -105,6 +111,7 @@ export function JobCategoryPage({
           <Button
             variant="outline"
             onClick={handlePrevPage}
+            disabled={isFirstPage}
             className="px-4 py-2 text-sm"
           >
             이전 분야
@@ -115,6 +122,7 @@ export function JobCategoryPage({
           <Button
             variant="outline"
             onClick={handleNextPage}
+            disabled={isLastPage}
             className="px-4 py-2 text-sm"
           >
             다른 분야 보기
