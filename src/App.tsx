@@ -1,7 +1,6 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { UserFormData, AgeGroup, Gender, QuestionAnswer, Result } from './types'
 import { QUESTIONS } from './data/questions'
-import { generateResults } from './data/mockResults'
 import { StartPage } from './pages/StartPage'
 import { BasicInfoPage } from './pages/BasicInfoPage'
 import { JobCategoryPage } from './pages/JobCategoryPage'
@@ -9,8 +8,14 @@ import { QuestionPage } from './pages/QuestionPage'
 import { ResultPage } from './pages/ResultPage'
 import { LoadingPage } from './pages/LoadingPage'
 import { HelpModal } from './components/common/HelpModal'
+import { fetchJobs, logJobsApiError } from './services/jobsApi'
+import {
+  mapApiJobToResult,
+  selectTemporaryJobs,
+} from './utils/selectTemporaryJobs'
 
 type Page = 'start' | 'basicInfo' | 'jobCategory' | 'question' | 'loading' | 'result'
+type LoadingStatus = 'loading' | 'error'
 
 function App() {
   const [currentPage, setCurrentPage] = useState<Page>('start')
@@ -18,6 +23,16 @@ function App() {
   const [currentJobCategoryPage, setCurrentJobCategoryPage] = useState(0)
   const [results, setResults] = useState<Result[]>([])
   const [showHelpModal, setShowHelpModal] = useState(false)
+  const [loadingStatus, setLoadingStatus] = useState<LoadingStatus>('loading')
+  const jobsRequestControllerRef = useRef<AbortController | null>(null)
+  const jobsRequestIdRef = useRef(0)
+
+  useEffect(() => {
+    return () => {
+      jobsRequestIdRef.current += 1
+      jobsRequestControllerRef.current?.abort()
+    }
+  }, [])
 
   const [formData, setFormData] = useState<UserFormData>({
     ageGroup: null,
@@ -150,17 +165,43 @@ function App() {
   }
 
   // Loading to result handlers
-  const handleLoadingStart = () => {
+  const loadJobs = async () => {
+    const requestId = jobsRequestIdRef.current + 1
+    jobsRequestIdRef.current = requestId
+
+    jobsRequestControllerRef.current?.abort()
+    const controller = new AbortController()
+    jobsRequestControllerRef.current = controller
+
+    setLoadingStatus('loading')
     setCurrentPage('loading')
+
+    try {
+      const jobs = await fetchJobs(controller.signal)
+      const temporaryResults = selectTemporaryJobs(jobs).map(mapApiJobToResult)
+
+      if (controller.signal.aborted || jobsRequestIdRef.current !== requestId) {
+        return
+      }
+
+      setResults(temporaryResults)
+      setCurrentPage('result')
+    } catch (error: unknown) {
+      if (controller.signal.aborted || jobsRequestIdRef.current !== requestId) {
+        return
+      }
+
+      logJobsApiError(error)
+      setLoadingStatus('error')
+    } finally {
+      if (jobsRequestControllerRef.current === controller) {
+        jobsRequestControllerRef.current = null
+      }
+    }
   }
 
-  const handleLoadingComplete = () => {
-    const generatedResults = generateResults(
-      formData.jobCategories,
-      formData.answers
-    )
-    setResults(generatedResults)
-    setCurrentPage('result')
+  const handleLoadingStart = () => {
+    void loadJobs()
   }
 
   // Result handlers
@@ -168,6 +209,8 @@ function App() {
     setCurrentPage('start')
     setCurrentQuestionIndex(0)
     setCurrentJobCategoryPage(0)
+    setResults([])
+    setLoadingStatus('loading')
     setFormData({
       ageGroup: null,
       gender: null,
@@ -225,7 +268,10 @@ function App() {
       )}
 
       {currentPage === 'loading' && (
-        <LoadingPage onComplete={handleLoadingComplete} />
+        <LoadingPage
+          status={loadingStatus}
+          onRetry={() => void loadJobs()}
+        />
       )}
 
       {currentPage === 'result' && (
