@@ -1,0 +1,14 @@
+{
+  "permissions": {
+    "allow": [
+      "PowerShell(npm install *)",
+      "PowerShell(New-Item *)",
+      "PowerShell(python --version 2>&1)",
+      "PowerShell(Start-Process -NoNewWindow npm -ArgumentList \"run dev\" -RedirectStandardOutput \"dev-server.log\" -RedirectStandardError \"dev-server.log\")",
+      "PowerShell(Start-Process -NoNewWindow npm -ArgumentList \"run dev\" -RedirectStandardOutput \"dev-server.log\")",
+      "PowerShell(Get-Command *)",
+      "Bash(npm run *)",
+      "Bash(npm install *)"
+    ]
+  }
+}
