@@ -76,23 +76,14 @@ export const MOCK_RESULTS: Result[] = [
 ]
 
 export function generateResults(
-  jobCategory: string | null,
+  jobCategories: string[],
   answers: Array<{ questionId: number; selectedOptionId: string | null; isUnknown: boolean }>,
 ): Result[] {
   // 기본 결과를 섞고 일부 카스터마이징
   const results = [...MOCK_RESULTS]
 
-  // IT 카테고리 선택 시 전산 사무원을 첫 번째로
-  if (jobCategory === 'it') {
-    results.sort((a, b) => {
-      if (a.jobTitle === '전산 사무원') return -1
-      if (b.jobTitle === '전산 사무원') return 1
-      return 0
-    })
-  }
-
-  // 경영·사무 카테고리 선택 시 전산 사무원을 첫 번째로
-  if (jobCategory === 'management') {
+  // IT 또는 경영·사무 카테고리 선택 시 전산 사무원을 첫 번째로
+  if (jobCategories.includes('it') || jobCategories.includes('management')) {
     results.sort((a, b) => {
       if (a.jobTitle === '전산 사무원') return -1
       if (b.jobTitle === '전산 사무원') return 1

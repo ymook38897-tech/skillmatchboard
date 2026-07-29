@@ -8,6 +8,7 @@ import { JobCategoryPage } from './pages/JobCategoryPage'
 import { QuestionPage } from './pages/QuestionPage'
 import { ResultPage } from './pages/ResultPage'
 import { LoadingPage } from './pages/LoadingPage'
+import { HelpModal } from './components/common/HelpModal'
 
 type Page = 'start' | 'basicInfo' | 'jobCategory' | 'question' | 'loading' | 'result'
 
@@ -16,11 +17,12 @@ function App() {
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0)
   const [currentJobCategoryPage, setCurrentJobCategoryPage] = useState(0)
   const [results, setResults] = useState<Result[]>([])
+  const [showHelpModal, setShowHelpModal] = useState(false)
 
   const [formData, setFormData] = useState<UserFormData>({
     ageGroup: null,
     gender: null,
-    jobCategory: null,
+    jobCategories: [],
     jobCategoryUnknown: false,
     answers: QUESTIONS.map((q) => ({
       questionId: q.id,
@@ -54,19 +56,31 @@ function App() {
   }
 
   // Job category handlers
-  const handleJobCategoryChange = (category: string | null) => {
-    setFormData((prev) => ({
-      ...prev,
-      jobCategory: category,
-      jobCategoryUnknown: false,
-    }))
+  const handleJobCategoryToggle = (category: string) => {
+    setFormData((prev) => {
+      if (prev.jobCategoryUnknown) return prev
+
+      if (prev.jobCategories.includes(category)) {
+        return {
+          ...prev,
+          jobCategories: prev.jobCategories.filter((id) => id !== category),
+        }
+      }
+
+      if (prev.jobCategories.length >= 3) return prev
+
+      return {
+        ...prev,
+        jobCategories: [...prev.jobCategories, category],
+      }
+    })
   }
 
   const handleJobCategoryUnknown = (unknown: boolean) => {
     setFormData((prev) => ({
       ...prev,
       jobCategoryUnknown: unknown,
-      jobCategory: unknown ? null : prev.jobCategory,
+      jobCategories: unknown ? [] : prev.jobCategories,
     }))
   }
 
@@ -142,7 +156,7 @@ function App() {
 
   const handleLoadingComplete = () => {
     const generatedResults = generateResults(
-      formData.jobCategory,
+      formData.jobCategories,
       formData.answers
     )
     setResults(generatedResults)
@@ -153,10 +167,11 @@ function App() {
   const handleReset = () => {
     setCurrentPage('start')
     setCurrentQuestionIndex(0)
+    setCurrentJobCategoryPage(0)
     setFormData({
       ageGroup: null,
       gender: null,
-      jobCategory: null,
+      jobCategories: [],
       jobCategoryUnknown: false,
       answers: QUESTIONS.map((q) => ({
         questionId: q.id,
@@ -178,19 +193,21 @@ function App() {
           onGenderChange={handleGenderChange}
           onNext={handleBasicInfoComplete}
           onPrev={handleBasicInfoPrev}
+          onHelp={() => setShowHelpModal(true)}
         />
       )}
 
       {currentPage === 'jobCategory' && (
         <JobCategoryPage
-          selectedJobCategory={formData.jobCategory}
+          selectedJobCategories={formData.jobCategories}
           jobCategoryUnknown={formData.jobCategoryUnknown}
-          onJobCategoryChange={handleJobCategoryChange}
+          onJobCategoryToggle={handleJobCategoryToggle}
           onJobCategoryUnknown={handleJobCategoryUnknown}
           onNext={handleJobCategoryNext}
           onPrev={handleJobCategoryPrev}
           currentPage={currentJobCategoryPage}
           onPageChange={setCurrentJobCategoryPage}
+          onHelp={() => setShowHelpModal(true)}
         />
       )}
 
@@ -203,6 +220,7 @@ function App() {
           onNext={handleQuestionNext}
           onPrev={handleQuestionPrev}
           onLoadingStart={handleLoadingStart}
+          onHelp={() => setShowHelpModal(true)}
         />
       )}
 
@@ -213,6 +231,8 @@ function App() {
       {currentPage === 'result' && (
         <ResultPage results={results} onReset={handleReset} />
       )}
+
+      <HelpModal isOpen={showHelpModal} onClose={() => setShowHelpModal(false)} />
     </>
   )
 }

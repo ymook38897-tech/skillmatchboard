@@ -1,8 +1,9 @@
 import { useEffect, useRef } from 'react'
 import { Button } from '../components/common/Button'
+import { TopBar } from '../components/common/TopBar'
 import { AgeGroup, Gender } from '../types'
 
-const AGE_GROUPS: AgeGroup[] = ['10대', '20대', '30대', '40대', '50대', '60대 이상']
+const AGE_GROUPS: AgeGroup[] = ['10~20대', '30~40대', '50~60대', '70대 이상']
 const GENDERS: Gender[] = ['남성', '여성']
 
 interface BasicInfoPageProps {
@@ -12,6 +13,7 @@ interface BasicInfoPageProps {
   onGenderChange: (gender: Gender) => void
   onNext: () => void
   onPrev: () => void
+  onHelp?: () => void
 }
 
 export function BasicInfoPage({
@@ -21,6 +23,7 @@ export function BasicInfoPage({
   onGenderChange,
   onNext,
   onPrev,
+  onHelp,
 }: BasicInfoPageProps) {
   const navigationPendingRef = useRef(false)
   const navigationTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -58,29 +61,30 @@ export function BasicInfoPage({
   }
 
   return (
-    <div className="min-h-screen bg-white flex flex-col pb-24 px-4 sm:px-6 lg:px-8 pt-8">
-      <div className="max-w-2xl mx-auto w-full flex-1">
-        {/* Header */}
-        <div className="mb-12">
-          <h1 className="text-4xl sm:text-5xl font-bold text-gray-900 mb-2">
-            기본정보 입력
-          </h1>
-          <p className="text-gray-600 text-lg">
-            당신에 대해 알려주세요.
-          </p>
-        </div>
+    <>
+      <TopBar onHelp={onHelp} />
+      <div className="min-h-screen bg-white flex flex-col pb-40 px-4 sm:px-6 lg:px-8 pt-32">
+        <div className="max-w-3xl mx-auto w-full flex-1">
+          {/* Header */}
+          <div className="mb-16">
+            <h1 className="text-5xl sm:text-6xl font-bold text-gray-900 mb-4">
+              기본정보 입력
+            </h1>
+            <p className="text-3xl text-gray-700 font-medium">
+              당신에 대해 알려주세요.
+            </p>
+          </div>
 
-        {/* Age Group Selection */}
-        <div className="mb-10">
-          <h2 id="age-group-label" className="text-xl font-semibold text-gray-900 mb-6">
-            연령대를 선택해주세요
-          </h2>
-          <div
-            role="group"
-            aria-labelledby="age-group-label"
-            className="max-h-80 max-w-sm mx-auto overflow-y-auto overscroll-contain touch-pan-y rounded-xl border border-gray-200 bg-gray-50 p-3 sm:p-4"
-          >
-            <div className="w-full flex flex-col gap-3">
+          {/* Age Group Selection */}
+          <div className="mb-12">
+            <h2 id="age-group-label" className="text-4xl font-semibold text-gray-900 mb-8">
+              연령대를 선택해주세요
+            </h2>
+            <div
+              role="group"
+              aria-labelledby="age-group-label"
+              className="grid grid-cols-1 sm:grid-cols-2 gap-6"
+            >
               {AGE_GROUPS.map((age) => {
                 const isSelected = selectedAgeGroup === age
                 return (
@@ -89,67 +93,71 @@ export function BasicInfoPage({
                     key={age}
                     onClick={() => handleAgeGroupSelect(age)}
                     aria-pressed={isSelected}
-                    className={`min-h-16 w-full transition-colors duration-200 font-semibold text-center py-4 px-6 rounded-xl border-2 flex items-center justify-center gap-3 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-600 focus-visible:ring-offset-2 ${
+                    className={`min-h-[7.75rem] w-full transition-all duration-200 font-bold text-3xl py-6 px-6 rounded-xl border-4 flex items-center justify-center gap-4 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-primary-600 focus-visible:ring-offset-2 ${
                       isSelected
-                        ? 'bg-primary-50 border-primary-600 text-primary-700 shadow-sm'
-                        : 'bg-white border-gray-200 text-gray-700 hover:border-primary-300'
+                        ? 'bg-primary-50 border-primary-600 text-primary-700 shadow-lg'
+                        : 'bg-white border-gray-300 text-gray-800 hover:border-primary-300'
                     }`}
                   >
-                    {isSelected && <span aria-hidden="true" className="text-lg">✓</span>}
+                    {isSelected && <span aria-hidden="true" className="text-4xl font-bold">✓</span>}
                     <span>{age}</span>
                   </button>
                 )
               })}
             </div>
           </div>
-          <p className="text-center text-gray-500 text-sm mt-4">
-            목록을 스크롤한 뒤 원하는 연령대 버튼을 직접 선택해주세요
-          </p>
+
+          {/* Gender Selection */}
+          <div>
+            <h2 id="gender-label" className="text-4xl font-semibold text-gray-900 mb-8">
+              성별을 선택해주세요
+            </h2>
+            <div role="group" aria-labelledby="gender-label" className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+              {GENDERS.map((gender) => {
+                const isSelected = selectedGender === gender
+                return (
+                  <button
+                    type="button"
+                    key={gender}
+                    onClick={() => handleGenderSelect(gender)}
+                    aria-pressed={isSelected}
+                    className={`min-h-[7.75rem] transition-all duration-200 font-bold text-3xl py-6 px-6 rounded-xl border-4 flex items-center justify-center gap-4 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-primary-600 focus-visible:ring-offset-2 ${
+                      isSelected
+                        ? 'bg-primary-50 border-primary-600 text-primary-700 shadow-lg'
+                        : 'bg-white border-gray-300 text-gray-800 hover:border-primary-300'
+                    }`}
+                  >
+                    {isSelected && <span aria-hidden="true" className="text-4xl font-bold">✓</span>}
+                    <span>{gender}</span>
+                  </button>
+                )
+              })}
+            </div>
+          </div>
         </div>
 
-        {/* Gender Selection */}
-        <div>
-          <h2 id="gender-label" className="text-xl font-semibold text-gray-900 mb-6">
-            성별을 선택해주세요
-          </h2>
-          <div role="group" aria-labelledby="gender-label" className="grid grid-cols-2 gap-4">
-            {GENDERS.map((gender) => {
-              const isSelected = selectedGender === gender
-              return (
-                <button
-                  type="button"
-                  key={gender}
-                  onClick={() => handleGenderSelect(gender)}
-                  aria-pressed={isSelected}
-                  className={`min-h-16 transition-colors duration-200 font-semibold py-4 px-4 rounded-xl border-2 flex items-center justify-center gap-3 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-600 focus-visible:ring-offset-2 ${
-                    isSelected
-                      ? 'bg-primary-50 border-primary-600 text-primary-700 shadow-sm'
-                      : 'bg-white border-gray-300 text-gray-700 hover:border-primary-300'
-                  }`}
-                >
-                  {isSelected && <span aria-hidden="true" className="text-lg">✓</span>}
-                  {gender}
-                </button>
-              )
-            })}
+        {/* Navigation Area */}
+        <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-300 px-4 sm:px-6 lg:px-8 py-6">
+          <div className="max-w-3xl mx-auto flex gap-6">
+            <Button
+              variant="outline"
+              size="2xl"
+              onClick={onPrev}
+              className="flex-1"
+            >
+              이전
+            </Button>
+            <Button
+              variant="primary"
+              size="2xl"
+              onClick={onNext}
+              className="flex-1"
+            >
+              다음
+            </Button>
           </div>
         </div>
       </div>
-
-      {/* Previous Button */}
-      <div className="fixed z-30 bottom-0 left-0 right-0 bg-white border-t border-gray-200 px-4 py-4 pb-[max(1rem,env(safe-area-inset-bottom))] sm:px-6 lg:px-8">
-        <div className="max-w-2xl mx-auto flex justify-center">
-          <Button
-            type="button"
-            variant="outline"
-            size="lg"
-            onClick={onPrev}
-            className="w-full sm:w-48"
-          >
-            이전
-          </Button>
-        </div>
-      </div>
-    </div>
+    </>
   )
 }

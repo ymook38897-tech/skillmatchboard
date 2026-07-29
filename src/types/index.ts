@@ -1,4 +1,4 @@
-export type AgeGroup = '10대' | '20대' | '30대' | '40대' | '50대' | '60대 이상';
+export type AgeGroup = '10~20대' | '30~40대' | '50~60대' | '70대 이상';
 export type Gender = '남성' | '여성';
 
 export interface QuestionAnswer {
@@ -10,7 +10,7 @@ export interface QuestionAnswer {
 export interface UserFormData {
   ageGroup: AgeGroup | null;
   gender: Gender | null;
-  jobCategory: string | null;
+  jobCategories: string[];
   jobCategoryUnknown: boolean;
   answers: QuestionAnswer[];
 }

@@ -21,31 +21,31 @@ export function StartPage({ onStart }: StartPageProps) {
           </div>
 
           {/* Title */}
-          <h1 className="text-4xl sm:text-6xl font-bold text-gray-900 mb-4 sm:mb-6 leading-tight">
+          <h1 className="text-5xl sm:text-8xl font-bold text-gray-900 mb-8 sm:mb-10 leading-tight">
             Skill Match
             <span className="block gradient-text">Board</span>
           </h1>
 
           {/* Main message */}
-          <p className="text-xl sm:text-3xl font-semibold text-gray-800 mb-6">
+          <p className="text-3xl sm:text-4xl font-semibold text-gray-800 mb-8">
             막연했던 희망 직무를 구체적으로 찾아보세요.
           </p>
 
           {/* CTA Button */}
-          <div className="relative z-20 mb-6">
+          <div className="relative z-20 mb-10">
             <Button
               type="button"
               variant="primary"
-              size="lg"
+              size="4xl"
               onClick={onStart}
-              className="relative z-20 min-h-14 w-full sm:w-auto sm:min-w-64 shadow-lg"
+              className="relative z-20 w-full shadow-lg text-4xl"
             >
               직무 찾기 시작
             </Button>
           </div>
 
           {/* Description */}
-          <p className="text-base sm:text-xl text-gray-600 leading-relaxed">
+          <p className="text-2xl sm:text-3xl text-gray-600 leading-relaxed">
             간단한 질문에 답하면 관심 분야와 업무 성향을 분석해
             <br />
             나에게 맞는 직무를 추천해드립니다.

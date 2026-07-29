@@ -159,7 +159,7 @@ src/
 {
   ageGroup: AgeGroup | null,          // 선택한 연령대
   gender: Gender | null,               // 선택한 성별
-  jobCategory: string | null,          // 선택한 직종 ID
+  jobCategories: string[],             // 선택한 직종 ID 배열 (최대 3개)
   jobCategoryUnknown: boolean,        // "잘 모르겠어요" 상태
   answers: QuestionAnswer[]            // 5단계 답변 배열
 }
@@ -250,8 +250,8 @@ newAnswers.map(a =>
 
 ### 3. Mock 데이터 기반 결과 (mockResults.ts)
 ```tsx
-function generateResults(jobCategory, answers) {
-  // 직종에 따라 결과 순서 변경
+function generateResults(jobCategories, answers) {
+  // 선택한 직종 배열에 따라 결과 순서 변경
   // IT 선택 시 전산 사무원 우선
   // 경영·사무 선택 시 전산 사무원 우선
 }
