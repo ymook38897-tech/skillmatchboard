@@ -62,25 +62,28 @@ export function JobCategoryPage({
     <>
       <TopBar onHelp={onHelp} />
       <div className="min-h-screen bg-white flex flex-col pb-40 px-4 sm:px-6 lg:px-8 pt-32">
-        <div className="max-w-3xl mx-auto w-full flex flex-col flex-1">
-          {/* Header Area */}
-          <div className="mb-6">
-            <h1 className="text-5xl sm:text-6xl font-bold text-gray-900 mb-3">
-              희망 직종 선택
-            </h1>
-            <p className="text-3xl text-gray-700 font-medium mb-4">
-              희망 직종을 최대 3개까지 선택해주세요
+        {/* Header Area - Fixed at top */}
+        <div className="max-w-3xl mx-auto w-full mb-6">
+          <h1 className="text-5xl sm:text-6xl font-bold text-gray-900 mb-3">
+            희망 직종 선택
+          </h1>
+          <p className="text-3xl text-gray-700 font-medium">
+            희망 직종을 최대 3개까지 선택해주세요
+          </p>
+        </div>
+
+        {/* Central Content Group - Centered vertically */}
+        <div className="flex-1 flex flex-col justify-center max-w-3xl mx-auto w-full">
+          {/* Current Selection Display */}
+          <div className="text-center bg-primary-50 rounded-lg py-4 px-6 mb-6" aria-live="polite">
+            <p className="text-3xl font-bold text-primary-700">
+              현재 선택 <span className="text-4xl">{selectedJobCategories.length}</span> / 3개
             </p>
-            <div className="text-center bg-primary-50 rounded-lg py-4 px-6" aria-live="polite">
-              <p className="text-3xl font-bold text-primary-700">
-                현재 선택 <span className="text-4xl">{selectedJobCategories.length}</span> / 3개
+            {isSelectionLimitReached && !jobCategoryUnknown && (
+              <p className="mt-3 text-2xl font-semibold text-primary-600" role="status">
+                3개를 모두 선택했습니다
               </p>
-              {isSelectionLimitReached && !jobCategoryUnknown && (
-                <p className="mt-3 text-2xl font-semibold text-primary-600" role="status">
-                  3개를 모두 선택했습니다
-                </p>
-              )}
-            </div>
+            )}
           </div>
 
           {/* Job Categories Grid Area - Fixed Height (2 columns x 2 rows) */}
