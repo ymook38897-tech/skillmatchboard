@@ -1,5 +1,15 @@
-import { useEffect, useRef, useState } from 'react'
-import { UserFormData, AgeGroup, Gender, QuestionAnswer, Result } from './types'
+import { useCallback, useEffect, useRef, useState } from 'react'
+import {
+  UserFormData,
+  AgeGroup,
+  Gender,
+  QuestionId,
+  QuestionOptionId,
+  Result,
+  QuestionProcessingStatus,
+  QuestionProcessingError,
+  QuestionProcessingErrorCode,
+} from './types'
 import { QUESTIONS } from './data/questions'
 import { StartPage } from './pages/StartPage'
 import { BasicInfoPage } from './pages/BasicInfoPage'
@@ -9,8 +19,9 @@ import { ResultPage } from './pages/ResultPage'
 import { LoadingPage } from './pages/LoadingPage'
 import { HelpModal } from './components/common/HelpModal'
 import { fetchJobs, logJobsApiError } from './services/jobsApi'
+import { processQuestionAnswer, ProcessAnswerError } from './services/processAnswerApi'
 import {
-  mapApiJobToResult,
+  mapNormalizedJobToResult,
   selectTemporaryJobs,
 } from './utils/selectTemporaryJobs'
 
@@ -24,13 +35,22 @@ function App() {
   const [results, setResults] = useState<Result[]>([])
   const [showHelpModal, setShowHelpModal] = useState(false)
   const [loadingStatus, setLoadingStatus] = useState<LoadingStatus>('loading')
+  const [questionProcessingStatus, setQuestionProcessingStatus] =
+    useState<QuestionProcessingStatus>('idle')
+  const [questionProcessingError, setQuestionProcessingError] =
+    useState<QuestionProcessingError | null>(null)
+
   const jobsRequestControllerRef = useRef<AbortController | null>(null)
   const jobsRequestIdRef = useRef(0)
+  const questionProcessingControllerRef = useRef<AbortController | null>(null)
+  const questionProcessingRequestIdRef = useRef(0)
 
   useEffect(() => {
     return () => {
       jobsRequestIdRef.current += 1
       jobsRequestControllerRef.current?.abort()
+      questionProcessingRequestIdRef.current += 1
+      questionProcessingControllerRef.current?.abort()
     }
   }, [])
 
@@ -41,13 +61,22 @@ function App() {
     jobCategoryUnknown: false,
     answers: QUESTIONS.map((q) => ({
       questionId: q.id,
-      selectedOptionId: null,
+      selectedOptionIds: [],
       isUnknown: false,
     })),
   })
 
+  const resetBasicInfo = () => {
+    setFormData((prev) => ({
+      ...prev,
+      ageGroup: null,
+      gender: null,
+    }))
+  }
+
   // Start page handlers
   const handleStartClick = () => {
+    resetBasicInfo()
     setCurrentPage('basicInfo')
   }
 
@@ -67,6 +96,7 @@ function App() {
 
   const handleBasicInfoPrev = () => {
     window.scrollTo(0, 0)
+    resetBasicInfo()
     setCurrentPage('start')
   }
 
@@ -107,61 +137,173 @@ function App() {
 
   const handleJobCategoryPrev = () => {
     window.scrollTo(0, 0)
+    resetBasicInfo()
     setCurrentPage('basicInfo')
   }
 
   // Question handlers
-  const handleAnswerSelect = (questionId: number, optionId: string) => {
+  const handleAnswerSelect = (
+    questionId: QuestionId,
+    optionId: QuestionOptionId,
+  ) => {
     setFormData((prev) => ({
       ...prev,
-      answers: prev.answers.map((a) =>
-        a.questionId === questionId
-          ? { ...a, selectedOptionId: optionId, isUnknown: false }
-          : a
-      ),
+      answers: prev.answers.map((answer) => {
+        if (answer.questionId !== questionId) return answer
+
+        const isSelected = answer.selectedOptionIds.includes(optionId)
+
+        return {
+          ...answer,
+          selectedOptionIds: isSelected
+            ? answer.selectedOptionIds.filter((id) => id !== optionId)
+            : [...answer.selectedOptionIds, optionId],
+          isUnknown: false,
+        }
+      }),
     }))
   }
 
-  const handleUnknownToggle = (questionId: number) => {
+  const handleUnknownToggle = (questionId: QuestionId) => {
     setFormData((prev) => ({
       ...prev,
-      answers: prev.answers.map((a) =>
-        a.questionId === questionId
-          ? {
-              ...a,
-              isUnknown: !a.isUnknown,
-              selectedOptionId: !a.isUnknown ? null : a.selectedOptionId,
-            }
-          : a
-      ),
+      answers: prev.answers.map((answer) => {
+        if (answer.questionId !== questionId) return answer
+
+        const isUnknown = !answer.isUnknown
+
+        return {
+          ...answer,
+          isUnknown,
+          selectedOptionIds: isUnknown ? [] : answer.selectedOptionIds,
+        }
+      }),
     }))
   }
 
-  const handleQuestionNext = () => {
-    if (currentQuestionIndex < QUESTIONS.length - 1) {
-      setCurrentQuestionIndex((prev) => prev + 1)
+  const handleQuestionNext = useCallback(async () => {
+    if (questionProcessingStatus !== 'idle') return
+
+    const currentQIndex = currentQuestionIndex
+    const currentAnswer = formData.answers.find(
+      (a) => a.questionId === QUESTIONS[currentQIndex].id,
+    )
+    const isAnswered =
+      currentAnswer &&
+      (currentAnswer.selectedOptionIds.length > 0 || currentAnswer.isUnknown)
+
+    if (!isAnswered) return
+
+    const requestId = questionProcessingRequestIdRef.current + 1
+    questionProcessingRequestIdRef.current = requestId
+
+    questionProcessingControllerRef.current?.abort()
+    const controller = new AbortController()
+    questionProcessingControllerRef.current = controller
+
+    setQuestionProcessingStatus('submitting')
+    setQuestionProcessingError(null)
+
+    const minDisplayTimeMs = 500
+    const startTime = Date.now()
+
+    try {
+      await processQuestionAnswer(
+        QUESTIONS[currentQIndex].id,
+        formData,
+        controller.signal,
+      )
+
+      if (
+        controller.signal.aborted ||
+        questionProcessingRequestIdRef.current !== requestId
+      ) {
+        return
+      }
+
+      const elapsedTime = Date.now() - startTime
+      const remainingTime = Math.max(0, minDisplayTimeMs - elapsedTime)
+
+      if (remainingTime > 0) {
+        await new Promise((resolve) => window.setTimeout(resolve, remainingTime))
+      }
+
+      if (
+        controller.signal.aborted ||
+        questionProcessingRequestIdRef.current !== requestId
+      ) {
+        return
+      }
+
+      setQuestionProcessingStatus('idle')
+      setCurrentQuestionIndex((prev) =>
+        prev < QUESTIONS.length - 1 ? prev + 1 : prev,
+      )
+    } catch (error: unknown) {
+      if (
+        controller.signal.aborted ||
+        questionProcessingRequestIdRef.current !== requestId
+      ) {
+        return
+      }
+
+      if (error instanceof ProcessAnswerError && error.code === 'ABORTED') {
+        return
+      }
+
+      let errorCode: QuestionProcessingErrorCode = 'UNKNOWN'
+      let userMessage = '알 수 없는 오류가 발생했어요. 다시 시도해주세요.'
+
+      if (error instanceof ProcessAnswerError) {
+        errorCode = error.code as Exclude<typeof error.code, 'ABORTED'>
+        userMessage = error.userMessage
+      } else {
+        userMessage =
+          error instanceof Error
+            ? `${error.message}`
+            : '알 수 없는 오류가 발생했어요. 다시 시도해주세요.'
+      }
+
+      setQuestionProcessingError({
+        code: errorCode,
+        userMessage,
+        developerMessage:
+          error instanceof Error ? error.message : '알 수 없는 오류',
+      })
+
+      setQuestionProcessingStatus('error')
+    } finally {
+      if (questionProcessingControllerRef.current === controller) {
+        questionProcessingControllerRef.current = null
+      }
     }
-  }
+  }, [
+    questionProcessingStatus,
+    currentQuestionIndex,
+    formData,
+    questionProcessingRequestIdRef,
+    questionProcessingControllerRef,
+  ])
 
   const handleQuestionPrev = () => {
+    if (questionProcessingStatus !== 'idle') return
+
     if (currentQuestionIndex === 0) {
       window.scrollTo(0, 0)
       setCurrentPage('jobCategory')
       setCurrentJobCategoryPage(0)
     } else {
-      const questionIdsToReset = new Set(
-        QUESTIONS.slice(currentQuestionIndex).map((question) => question.id)
-      )
-      setFormData((prev) => ({
-        ...prev,
-        answers: prev.answers.map((answer) =>
-          questionIdsToReset.has(answer.questionId)
-            ? { ...answer, selectedOptionId: null, isUnknown: false }
-            : answer
-        ),
-      }))
-      setCurrentQuestionIndex((prev) => prev - 1)
+      setCurrentQuestionIndex((prev) => (prev > 0 ? prev - 1 : prev))
     }
+  }
+
+  const handleRetryQuestionAnswer = () => {
+    void handleQuestionNext()
+  }
+
+  const handleSelectAnswerAgain = () => {
+    setQuestionProcessingStatus('idle')
+    setQuestionProcessingError(null)
   }
 
   // Loading to result handlers
@@ -178,7 +320,9 @@ function App() {
 
     try {
       const jobs = await fetchJobs(controller.signal)
-      const temporaryResults = selectTemporaryJobs(jobs).map(mapApiJobToResult)
+      const temporaryResults = selectTemporaryJobs(jobs).map(
+        mapNormalizedJobToResult,
+      )
 
       if (controller.signal.aborted || jobsRequestIdRef.current !== requestId) {
         return
@@ -200,7 +344,8 @@ function App() {
     }
   }
 
-  const handleLoadingStart = () => {
+  const handleResultConfirm = () => {
+    if (jobsRequestControllerRef.current) return
     void loadJobs()
   }
 
@@ -218,7 +363,7 @@ function App() {
       jobCategoryUnknown: false,
       answers: QUESTIONS.map((q) => ({
         questionId: q.id,
-        selectedOptionId: null,
+        selectedOptionIds: [],
         isUnknown: false,
       })),
     })
@@ -262,7 +407,11 @@ function App() {
           onUnknownToggle={handleUnknownToggle}
           onNext={handleQuestionNext}
           onPrev={handleQuestionPrev}
-          onLoadingStart={handleLoadingStart}
+          onResultConfirm={handleResultConfirm}
+          processingStatus={questionProcessingStatus}
+          processingError={questionProcessingError}
+          onRetryAnswer={handleRetryQuestionAnswer}
+          onSelectAnswerAgain={handleSelectAnswerAgain}
           onHelp={() => setShowHelpModal(true)}
         />
       )}

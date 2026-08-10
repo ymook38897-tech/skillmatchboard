@@ -1,4 +1,4 @@
-import { Result } from '../types'
+import { QuestionAnswer, Result } from '../types'
 
 export const MOCK_RESULTS: Result[] = [
   {
@@ -77,7 +77,7 @@ export const MOCK_RESULTS: Result[] = [
 
 export function generateResults(
   jobCategories: string[],
-  answers: Array<{ questionId: number; selectedOptionId: string | null; isUnknown: boolean }>,
+  answers: QuestionAnswer[],
 ): Result[] {
   // 기본 결과를 섞고 일부 카스터마이징
   const results = [...MOCK_RESULTS]

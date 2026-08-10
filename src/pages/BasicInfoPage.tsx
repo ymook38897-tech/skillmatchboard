@@ -1,5 +1,4 @@
-import { useEffect, useRef } from 'react'
-import { Button } from '../components/common/Button'
+import { useState, useEffect, useRef } from 'react'
 import { TopBar } from '../components/common/TopBar'
 import { AgeGroup, Gender } from '../types'
 
@@ -25,45 +24,97 @@ export function BasicInfoPage({
   onPrev,
   onHelp,
 }: BasicInfoPageProps) {
+  const [showGenderSection, setShowGenderSection] = useState(false)
+  const [isFadingOut, setIsFadingOut] = useState(false)
   const navigationPendingRef = useRef(false)
+  const transitionIdRef = useRef(0)
   const navigationTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const fadeOutTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const onNextRef = useRef(onNext)
+
+  const clearNavigationTimeouts = () => {
+    transitionIdRef.current += 1
+    navigationPendingRef.current = false
+
+    if (navigationTimeoutRef.current) {
+      clearTimeout(navigationTimeoutRef.current)
+      navigationTimeoutRef.current = null
+    }
+    if (fadeOutTimeoutRef.current) {
+      clearTimeout(fadeOutTimeoutRef.current)
+      fadeOutTimeoutRef.current = null
+    }
+  }
+
+  useEffect(() => {
+    onNextRef.current = onNext
+  }, [onNext])
 
   useEffect(() => {
     return () => {
-      if (navigationTimeoutRef.current) {
-        clearTimeout(navigationTimeoutRef.current)
-      }
+      clearNavigationTimeouts()
     }
   }, [])
 
-  const scheduleNextIfComplete = (
-    ageGroup: AgeGroup | null,
-    gender: Gender | null,
-  ) => {
-    if (!ageGroup || !gender || navigationPendingRef.current) {
-      return
+  useEffect(() => {
+    if (isFadingOut) {
+      const transitionId = transitionIdRef.current
+      fadeOutTimeoutRef.current = setTimeout(() => {
+        fadeOutTimeoutRef.current = null
+        if (
+          !navigationPendingRef.current ||
+          transitionIdRef.current !== transitionId
+        ) {
+          return
+        }
+        onNextRef.current()
+      }, 300)
+      return () => {
+        if (fadeOutTimeoutRef.current) {
+          clearTimeout(fadeOutTimeoutRef.current)
+          fadeOutTimeoutRef.current = null
+        }
+      }
     }
-
-    navigationPendingRef.current = true
-    navigationTimeoutRef.current = setTimeout(onNext, 120)
-  }
+  }, [isFadingOut])
 
   const handleAgeGroupSelect = (ageGroup: AgeGroup) => {
     if (navigationPendingRef.current) return
     onAgeGroupChange(ageGroup)
-    scheduleNextIfComplete(ageGroup, selectedGender)
+    if (!showGenderSection) {
+      setShowGenderSection(true)
+    }
   }
 
   const handleGenderSelect = (gender: Gender) => {
     if (navigationPendingRef.current) return
     onGenderChange(gender)
-    scheduleNextIfComplete(selectedAgeGroup, gender)
+    navigationPendingRef.current = true
+    const transitionId = transitionIdRef.current + 1
+    transitionIdRef.current = transitionId
+    navigationTimeoutRef.current = setTimeout(() => {
+      navigationTimeoutRef.current = null
+      if (
+        !navigationPendingRef.current ||
+        transitionIdRef.current !== transitionId
+      ) {
+        return
+      }
+      setIsFadingOut(true)
+    }, 400)
+  }
+
+  const handlePrevious = () => {
+    clearNavigationTimeouts()
+    setShowGenderSection(false)
+    setIsFadingOut(false)
+    onPrev()
   }
 
   return (
     <>
       <TopBar onHelp={onHelp} />
-      <div className="min-h-screen bg-white flex flex-col pb-40 px-4 sm:px-6 lg:px-8 pt-32">
+      <div className={`min-h-screen bg-white flex flex-col px-4 sm:px-6 lg:px-8 pt-32 pb-20 transition-opacity duration-300 ${isFadingOut ? 'opacity-0' : 'opacity-100'}`}>
         <div className="max-w-3xl mx-auto w-full flex-1">
           {/* Header */}
           <div className="mb-16">
@@ -108,53 +159,46 @@ export function BasicInfoPage({
           </div>
 
           {/* Gender Selection */}
-          <div>
-            <h2 id="gender-label" className="text-4xl font-semibold text-gray-900 mb-8">
-              성별을 선택해주세요
-            </h2>
-            <div role="group" aria-labelledby="gender-label" className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-              {GENDERS.map((gender) => {
-                const isSelected = selectedGender === gender
-                return (
-                  <button
-                    type="button"
-                    key={gender}
-                    onClick={() => handleGenderSelect(gender)}
-                    aria-pressed={isSelected}
-                    className={`min-h-[7.75rem] transition-all duration-200 font-bold text-3xl py-6 px-6 rounded-xl border-4 flex items-center justify-center gap-4 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-primary-600 focus-visible:ring-offset-2 ${
-                      isSelected
-                        ? 'bg-primary-50 border-primary-600 text-primary-700 shadow-lg'
-                        : 'bg-white border-gray-300 text-gray-800 hover:border-primary-300'
-                    }`}
-                  >
-                    {isSelected && <span aria-hidden="true" className="text-4xl font-bold">✓</span>}
-                    <span>{gender}</span>
-                  </button>
-                )
-              })}
+          {showGenderSection && (
+            <div className="animate-slide-up">
+              <h2 id="gender-label" className="text-4xl font-semibold text-gray-900 mb-8">
+                성별을 선택해주세요
+              </h2>
+              <div role="group" aria-labelledby="gender-label" className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                {GENDERS.map((gender) => {
+                  const isSelected = selectedGender === gender
+                  return (
+                    <button
+                      type="button"
+                      key={gender}
+                      onClick={() => handleGenderSelect(gender)}
+                      aria-pressed={isSelected}
+                      className={`min-h-[7.75rem] transition-all duration-200 font-bold text-3xl py-6 px-6 rounded-xl border-4 flex items-center justify-center gap-4 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-primary-600 focus-visible:ring-offset-2 ${
+                        isSelected
+                          ? 'bg-primary-50 border-primary-600 text-primary-700 shadow-lg'
+                          : 'bg-white border-gray-300 text-gray-800 hover:border-primary-300'
+                      }`}
+                    >
+                      {isSelected && <span aria-hidden="true" className="text-4xl font-bold">✓</span>}
+                      <span>{gender}</span>
+                    </button>
+                  )
+                })}
+              </div>
             </div>
-          </div>
+          )}
         </div>
 
-        {/* Navigation Area */}
+        {/* Navigation Area - Previous button only */}
         <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-300 px-4 sm:px-6 lg:px-8 py-6">
-          <div className="max-w-3xl mx-auto flex gap-6">
-            <Button
-              variant="outline"
-              size="2xl"
-              onClick={onPrev}
-              className="flex-1"
+          <div className="max-w-3xl mx-auto">
+            <button
+              type="button"
+              onClick={handlePrevious}
+              className="w-full min-h-[7.75rem] font-bold text-3xl py-6 px-6 rounded-xl border-4 bg-white border-gray-300 text-gray-800 hover:border-primary-300 transition-all duration-200 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-primary-600 focus-visible:ring-offset-2"
             >
               이전
-            </Button>
-            <Button
-              variant="primary"
-              size="2xl"
-              onClick={onNext}
-              className="flex-1"
-            >
-              다음
-            </Button>
+            </button>
           </div>
         </div>
       </div>
