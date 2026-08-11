@@ -2,7 +2,7 @@ import React from 'react'
 
 interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: 'primary' | 'secondary' | 'outline'
-  size?: 'sm' | 'md' | 'lg' | 'xl' | '2xl' | '3xl' | '4xl'
+  size?: 'sm' | 'topbar' | 'md' | 'lg' | 'xl' | '2xl' | '3xl' | '4xl'
   children: React.ReactNode
 }
 
@@ -27,6 +27,7 @@ export function Button({
 
   const sizes = {
     sm: 'min-h-14 px-5 py-3 text-xl',
+    topbar: 'min-h-14 px-5 py-3 text-[2rem]',
     md: 'min-h-14 px-6 py-3 text-xl',
     lg: 'min-h-16 px-7 py-4 text-2xl',
     xl: 'min-h-24 px-8 py-6 text-[2rem]',

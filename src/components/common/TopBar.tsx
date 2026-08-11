@@ -6,6 +6,7 @@ interface TopBarProps {
   pageId?: FlowPageId
   progressLabel?: string
   progressValue?: number
+  animateProgress?: boolean
 }
 
 export function TopBar({
@@ -13,8 +14,10 @@ export function TopBar({
   pageId,
   progressLabel,
   progressValue,
+  animateProgress = true,
 }: TopBarProps) {
   const pageIndex = pageId ? FLOW_PAGE_IDS.indexOf(pageId) : -1
+  const usesEntryFlowTypography = pageId === 'P1' || pageId === 'P2'
   const resolvedLabel =
     progressLabel ??
     (pageIndex >= 0 ? `${pageIndex + 1} / ${FLOW_PAGE_IDS.length}` : null)
@@ -32,13 +35,21 @@ export function TopBar({
 
         {resolvedLabel && (
           <div className="min-w-0 flex-1" aria-label={`진행 상황 ${resolvedLabel}`}>
-            <div className="mb-2 text-center text-xl font-bold text-[#4D4B46]">
+            <div
+              className={`mb-2 text-center text-xl text-[#4D4B46] ${
+                usesEntryFlowTypography ? 'font-normal' : 'font-bold'
+              }`}
+            >
               {resolvedLabel}
             </div>
             {showProgressBar && (
               <div className="h-2 overflow-hidden rounded-full bg-primary-100">
                 <div
-                  className="h-full rounded-full bg-primary-600 transition-[width] duration-300"
+                  className={`h-full rounded-full bg-primary-600 ${
+                    animateProgress
+                      ? 'transition-[width] duration-300'
+                      : ''
+                  }`}
                   style={{ width: `${Math.min(100, Math.max(0, resolvedValue))}%` }}
                 />
               </div>
@@ -49,7 +60,7 @@ export function TopBar({
         {onHelp && (
           <Button
             variant="secondary"
-            size="sm"
+            size={usesEntryFlowTypography ? 'topbar' : 'sm'}
             onClick={onHelp}
             className="shrink-0 whitespace-nowrap"
           >

@@ -1,6 +1,30 @@
 @import "tailwindcss";
 @config "../tailwind.config.cjs";
 
+@font-face {
+  font-family: "NanumSquareRound V6";
+  src: url("./assets/fonts/NanumSquareRoundR.otf") format("opentype");
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "NanumSquareRound V6";
+  src: url("./assets/fonts/NanumSquareRoundB.otf") format("opentype");
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "NanumSquareRound V6";
+  src: url("./assets/fonts/NanumSquareRoundEB.otf") format("opentype");
+  font-style: normal;
+  font-weight: 800;
+  font-display: swap;
+}
+
 @layer utilities {
   .gradient-text {
     @apply bg-gradient-to-r from-primary-600 to-accent-600 bg-clip-text text-transparent;
@@ -62,6 +86,15 @@
   body {
     @apply bg-[#FAF8F2] font-sans text-[#0D0C0C] antialiased;
     font-synthesis: none;
+  }
+
+  .v6-entry-page {
+    font-family:
+      "NanumSquareRound V6",
+      "NanumSquareRound",
+      "Apple SD Gothic Neo",
+      "Malgun Gothic",
+      sans-serif;
   }
 
   html {
