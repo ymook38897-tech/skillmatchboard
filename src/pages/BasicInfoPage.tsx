@@ -1,207 +1,224 @@
-import { useState, useEffect, useRef } from 'react'
+import { useEffect, useRef } from 'react'
+import { Button } from '../components/common/Button'
 import { TopBar } from '../components/common/TopBar'
-import { AgeGroup, Gender } from '../types'
-
-const AGE_GROUPS: AgeGroup[] = ['10~20대', '30~40대', '50~60대', '70대 이상']
-const GENDERS: Gender[] = ['남성', '여성']
+import {
+  AGE_BAND_OPTIONS,
+  MOCK_BARRIER_OPTIONS,
+  MOCK_CERTIFICATION_OPTIONS,
+} from '../data/profileOptions'
+import type { AgeBandId, ProfileDraft } from '../types/flow'
 
 interface BasicInfoPageProps {
-  selectedAgeGroup: AgeGroup | null
-  selectedGender: Gender | null
-  onAgeGroupChange: (age: AgeGroup) => void
-  onGenderChange: (gender: Gender) => void
+  profile: ProfileDraft
+  onAgeBandChange: (ageBand: AgeBandId) => void
+  onBarrierToggle: (barrierId: string) => void
+  onBarrierNone: () => void
+  onCertificationToggle: (certificationId: string) => void
+  onCertificationNone: () => void
   onNext: () => void
   onPrev: () => void
-  onHelp?: () => void
+  onHelp: () => void
 }
 
+const MAX_SELECTIONS = 5
+
 export function BasicInfoPage({
-  selectedAgeGroup,
-  selectedGender,
-  onAgeGroupChange,
-  onGenderChange,
+  profile,
+  onAgeBandChange,
+  onBarrierToggle,
+  onBarrierNone,
+  onCertificationToggle,
+  onCertificationNone,
   onNext,
   onPrev,
   onHelp,
 }: BasicInfoPageProps) {
-  const [showGenderSection, setShowGenderSection] = useState(false)
-  const [isFadingOut, setIsFadingOut] = useState(false)
-  const navigationPendingRef = useRef(false)
-  const transitionIdRef = useRef(0)
-  const navigationTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
-  const fadeOutTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
-  const onNextRef = useRef(onNext)
+  const barrierSectionRef = useRef<HTMLElement>(null)
+  const certificationSectionRef = useRef<HTMLElement>(null)
+  const previousAgeBandRef = useRef<AgeBandId | null>(profile.ageBand)
+  const hadBarrierDecisionRef = useRef(
+    profile.barrierNone || profile.barrierIds.length > 0,
+  )
 
-  const clearNavigationTimeouts = () => {
-    transitionIdRef.current += 1
-    navigationPendingRef.current = false
-
-    if (navigationTimeoutRef.current) {
-      clearTimeout(navigationTimeoutRef.current)
-      navigationTimeoutRef.current = null
-    }
-    if (fadeOutTimeoutRef.current) {
-      clearTimeout(fadeOutTimeoutRef.current)
-      fadeOutTimeoutRef.current = null
-    }
-  }
+  const showBarriers = profile.ageBand !== null
+  const hasBarrierDecision =
+    profile.barrierNone || profile.barrierIds.length > 0
+  const showCertifications = showBarriers && hasBarrierDecision
 
   useEffect(() => {
-    onNextRef.current = onNext
-  }, [onNext])
+    if (previousAgeBandRef.current === null && profile.ageBand !== null) {
+      barrierSectionRef.current?.scrollIntoView({
+        behavior: 'smooth',
+        block: 'start',
+      })
+    }
+    previousAgeBandRef.current = profile.ageBand
+  }, [profile.ageBand])
 
   useEffect(() => {
-    return () => {
-      clearNavigationTimeouts()
+    if (!hadBarrierDecisionRef.current && hasBarrierDecision) {
+      certificationSectionRef.current?.scrollIntoView({
+        behavior: 'smooth',
+        block: 'start',
+      })
     }
-  }, [])
-
-  useEffect(() => {
-    if (isFadingOut) {
-      const transitionId = transitionIdRef.current
-      fadeOutTimeoutRef.current = setTimeout(() => {
-        fadeOutTimeoutRef.current = null
-        if (
-          !navigationPendingRef.current ||
-          transitionIdRef.current !== transitionId
-        ) {
-          return
-        }
-        onNextRef.current()
-      }, 300)
-      return () => {
-        if (fadeOutTimeoutRef.current) {
-          clearTimeout(fadeOutTimeoutRef.current)
-          fadeOutTimeoutRef.current = null
-        }
-      }
-    }
-  }, [isFadingOut])
-
-  const handleAgeGroupSelect = (ageGroup: AgeGroup) => {
-    if (navigationPendingRef.current) return
-    onAgeGroupChange(ageGroup)
-    if (!showGenderSection) {
-      setShowGenderSection(true)
-    }
-  }
-
-  const handleGenderSelect = (gender: Gender) => {
-    if (navigationPendingRef.current) return
-    onGenderChange(gender)
-    navigationPendingRef.current = true
-    const transitionId = transitionIdRef.current + 1
-    transitionIdRef.current = transitionId
-    navigationTimeoutRef.current = setTimeout(() => {
-      navigationTimeoutRef.current = null
-      if (
-        !navigationPendingRef.current ||
-        transitionIdRef.current !== transitionId
-      ) {
-        return
-      }
-      setIsFadingOut(true)
-    }, 400)
-  }
-
-  const handlePrevious = () => {
-    clearNavigationTimeouts()
-    setShowGenderSection(false)
-    setIsFadingOut(false)
-    onPrev()
-  }
+    hadBarrierDecisionRef.current = hasBarrierDecision
+  }, [hasBarrierDecision])
 
   return (
-    <>
-      <TopBar onHelp={onHelp} />
-      <div className={`min-h-screen bg-white flex flex-col px-4 sm:px-6 lg:px-8 pt-32 pb-20 transition-opacity duration-300 ${isFadingOut ? 'opacity-0' : 'opacity-100'}`}>
-        <div className="max-w-3xl mx-auto w-full flex-1">
-          {/* Header */}
-          <div className="mb-16">
-            <h1 className="text-5xl sm:text-6xl font-bold text-gray-900 mb-4">
-              기본정보 입력
-            </h1>
-            <p className="text-3xl text-gray-700 font-medium">
-              당신에 대해 알려주세요.
-            </p>
-          </div>
+    <div className="min-h-screen bg-[#FAF8F2] pb-40 text-[#0D0C0C]">
+      <TopBar pageId="P3" onHelp={onHelp} />
+      <main className="mx-auto w-full max-w-5xl px-6 pt-32">
+        <h1 className="mb-5 text-[2.75rem] font-extrabold leading-tight">
+          먼저 기본 정보를 알려주세요
+        </h1>
+        <p className="mb-10 text-2xl leading-normal text-[#4D4B46]">
+          하나를 고르면 다음 항목이 아래에 나타나요.
+        </p>
 
-          {/* Age Group Selection */}
-          <div className="mb-12">
-            <h2 id="age-group-label" className="text-4xl font-semibold text-gray-900 mb-8">
-              연령대를 선택해주세요
+        <section aria-labelledby="age-band-title" className="mb-12">
+          <h2 id="age-band-title" className="mb-6 text-[2.375rem] font-extrabold leading-tight">
+            나이를 알려주세요
+          </h2>
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {AGE_BAND_OPTIONS.map((option) => {
+              const selected = profile.ageBand === option.id
+              return (
+                <button
+                  key={option.id}
+                  type="button"
+                  aria-pressed={selected}
+                  onClick={() => onAgeBandChange(option.id)}
+                  className={`min-h-[5.5rem] rounded-xl border-4 px-5 py-4 text-left text-3xl font-bold leading-snug focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-primary-600 focus-visible:ring-offset-4 ${
+                    selected
+                      ? 'border-primary-600 bg-primary-100'
+                      : 'border-[#4D4B46] bg-white'
+                  }`}
+                >
+                  {selected ? '선택됨 · ' : ''}
+                  {option.label}
+                </button>
+              )
+            })}
+          </div>
+        </section>
+
+        {showBarriers && (
+          <section
+            ref={barrierSectionRef}
+            aria-labelledby="barrier-title"
+            className="mb-12 scroll-mt-32"
+          >
+            <h2 id="barrier-title" className="mb-3 text-[2.375rem] font-extrabold leading-tight">
+              일할 때 어려운 것이 있나요?
             </h2>
-            <div
-              role="group"
-              aria-labelledby="age-group-label"
-              className="grid grid-cols-1 sm:grid-cols-2 gap-6"
-            >
-              {AGE_GROUPS.map((age) => {
-                const isSelected = selectedAgeGroup === age
+            <p className="mb-6 text-xl leading-normal text-[#4D4B46]">
+              이 단계에서는 대표 항목으로 선택 흐름만 확인합니다. 최대 5개까지
+              고를 수 있어요.
+            </p>
+            <div className="grid gap-4 sm:grid-cols-2">
+              {MOCK_BARRIER_OPTIONS.map((option) => {
+                const selected = profile.barrierIds.includes(option.id)
+                const disabled =
+                  profile.barrierNone ||
+                  (!selected && profile.barrierIds.length >= MAX_SELECTIONS)
+
                 return (
                   <button
+                    key={option.id}
                     type="button"
-                    key={age}
-                    onClick={() => handleAgeGroupSelect(age)}
-                    aria-pressed={isSelected}
-                    className={`min-h-[7.75rem] w-full transition-all duration-200 font-bold text-3xl py-6 px-6 rounded-xl border-4 flex items-center justify-center gap-4 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-primary-600 focus-visible:ring-offset-2 ${
-                      isSelected
-                        ? 'bg-primary-50 border-primary-600 text-primary-700 shadow-lg'
-                        : 'bg-white border-gray-300 text-gray-800 hover:border-primary-300'
+                    aria-pressed={selected}
+                    disabled={disabled}
+                    onClick={() => onBarrierToggle(option.id)}
+                    className={`min-h-[5.5rem] rounded-xl border-4 px-5 py-4 text-left text-3xl font-bold leading-snug disabled:opacity-45 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-primary-600 focus-visible:ring-offset-4 ${
+                      selected
+                        ? 'border-primary-600 bg-primary-100'
+                        : 'border-[#4D4B46] bg-white'
                     }`}
                   >
-                    {isSelected && <span aria-hidden="true" className="text-4xl font-bold">✓</span>}
-                    <span>{age}</span>
+                    {selected ? '선택됨 · ' : ''}
+                    {option.label}
                   </button>
                 )
               })}
             </div>
-          </div>
-
-          {/* Gender Selection */}
-          {showGenderSection && (
-            <div className="animate-slide-up">
-              <h2 id="gender-label" className="text-4xl font-semibold text-gray-900 mb-8">
-                성별을 선택해주세요
-              </h2>
-              <div role="group" aria-labelledby="gender-label" className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                {GENDERS.map((gender) => {
-                  const isSelected = selectedGender === gender
-                  return (
-                    <button
-                      type="button"
-                      key={gender}
-                      onClick={() => handleGenderSelect(gender)}
-                      aria-pressed={isSelected}
-                      className={`min-h-[7.75rem] transition-all duration-200 font-bold text-3xl py-6 px-6 rounded-xl border-4 flex items-center justify-center gap-4 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-primary-600 focus-visible:ring-offset-2 ${
-                        isSelected
-                          ? 'bg-primary-50 border-primary-600 text-primary-700 shadow-lg'
-                          : 'bg-white border-gray-300 text-gray-800 hover:border-primary-300'
-                      }`}
-                    >
-                      {isSelected && <span aria-hidden="true" className="text-4xl font-bold">✓</span>}
-                      <span>{gender}</span>
-                    </button>
-                  )
-                })}
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* Navigation Area - Previous button only */}
-        <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-300 px-4 sm:px-6 lg:px-8 py-6">
-          <div className="max-w-3xl mx-auto">
-            <button
-              type="button"
-              onClick={handlePrevious}
-              className="w-full min-h-[7.75rem] font-bold text-3xl py-6 px-6 rounded-xl border-4 bg-white border-gray-300 text-gray-800 hover:border-primary-300 transition-all duration-200 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-primary-600 focus-visible:ring-offset-2"
+            <Button
+              variant={profile.barrierNone ? 'primary' : 'outline'}
+              size="xl"
+              onClick={onBarrierNone}
+              className="mt-4 w-full"
             >
-              이전
-            </button>
-          </div>
+              어려운 일이 없어요
+            </Button>
+          </section>
+        )}
+
+        {showCertifications && (
+          <section
+            ref={certificationSectionRef}
+            aria-labelledby="certification-title"
+            className="scroll-mt-32"
+          >
+            <h2 id="certification-title" className="mb-3 text-[2.375rem] font-extrabold leading-tight">
+              가지고 있는 자격증이 있나요?
+            </h2>
+            <p className="mb-6 text-xl leading-normal text-[#4D4B46]">
+              실제 자격증 목록이 연결되기 전 대표 항목만 보여드려요.
+            </p>
+            <Button
+              variant={profile.certificationNone ? 'primary' : 'outline'}
+              size="xl"
+              onClick={onCertificationNone}
+              className="mb-4 w-full"
+            >
+              자격증이 없어요
+            </Button>
+            <div className="grid gap-4 sm:grid-cols-2">
+              {MOCK_CERTIFICATION_OPTIONS.map((option) => {
+                const selected = profile.certificationIds.includes(option.id)
+                const disabled =
+                  profile.certificationNone ||
+                  (!selected &&
+                    profile.certificationIds.length >= MAX_SELECTIONS)
+
+                return (
+                  <button
+                    key={option.id}
+                    type="button"
+                    aria-pressed={selected}
+                    disabled={disabled}
+                    onClick={() => onCertificationToggle(option.id)}
+                    className={`min-h-[5.5rem] rounded-xl border-4 px-5 py-4 text-left text-3xl font-bold leading-snug disabled:opacity-45 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-primary-600 focus-visible:ring-offset-4 ${
+                      selected
+                        ? 'border-primary-600 bg-primary-100'
+                        : 'border-[#4D4B46] bg-white'
+                    }`}
+                  >
+                    {selected ? '선택됨 · ' : ''}
+                    {option.label}
+                  </button>
+                )
+              })}
+            </div>
+          </section>
+        )}
+      </main>
+
+      <footer className="fixed inset-x-0 bottom-0 border-t-2 border-primary-100 bg-[#FAF8F2] px-6 py-4">
+        <div className="mx-auto grid max-w-5xl grid-cols-2 gap-4">
+          <Button variant="outline" size="xl" onClick={onPrev}>
+            이전
+          </Button>
+          <Button
+            variant="primary"
+            size="xl"
+            onClick={onNext}
+            disabled={!showCertifications}
+          >
+            다음
+          </Button>
         </div>
-      </div>
-    </>
+      </footer>
+    </div>
   )
 }

@@ -1,73 +1,44 @@
 import { Button } from '../components/common/Button'
+import { TopBar } from '../components/common/TopBar'
 
 interface StartPageProps {
   onStart: () => void
+  onHelp: () => void
 }
 
-export function StartPage({ onStart }: StartPageProps) {
+export function StartPage({ onStart, onHelp }: StartPageProps) {
   return (
-    <div className="relative isolate min-h-screen overflow-x-hidden bg-gradient-to-br from-gray-50 via-white to-gray-50 flex items-start sm:items-center justify-center px-4 py-6 sm:py-8">
-      <div className="max-w-2xl w-full">
-        {/* Decorative background elements */}
-        <div aria-hidden="true" className="pointer-events-none absolute top-0 right-0 w-96 h-96 bg-primary-100 rounded-full mix-blend-multiply filter blur-3xl opacity-20 -translate-y-1/2 -translate-x-1/2"></div>
-        <div aria-hidden="true" className="pointer-events-none absolute bottom-0 left-0 w-96 h-96 bg-accent-100 rounded-full mix-blend-multiply filter blur-3xl opacity-20 translate-y-1/2 -translate-x-1/2"></div>
+    <div className="min-h-screen bg-[#FAF8F2] text-[#0D0C0C]">
+      <TopBar pageId="P1" onHelp={onHelp} />
+      <main className="mx-auto flex min-h-screen w-full max-w-4xl flex-col items-center justify-center px-6 pb-28 pt-32 text-center">
+        <p className="mb-5 text-2xl font-bold text-primary-700">
+          희망직종 찾기 도우미
+        </p>
+        <h1 className="mb-8 text-[2.75rem] font-extrabold leading-tight sm:text-6xl">
+          나에게 맞는 일을<br />함께 찾아봐요
+        </h1>
+        <p className="mb-5 max-w-3xl text-2xl leading-relaxed text-[#4D4B46]">
+          나이와 일하기 어려운 점, 자격증을 살펴보고 신청서에 적을
+          희망직종을 보여드려요.
+        </p>
+        <p className="mb-12 text-3xl font-bold text-primary-800">
+          약 5분 걸려요
+        </p>
 
-        <div className="relative z-10 text-center">
-          {/* Logo */}
-          <div className="mb-4 sm:mb-8">
-            <div className="inline-flex items-center justify-center w-12 h-12 sm:w-16 sm:h-16 rounded-xl bg-gradient-to-br from-primary-600 to-accent-600">
-              <span className="text-white text-xl sm:text-2xl font-bold">SM</span>
-            </div>
-          </div>
+        <Button
+          type="button"
+          variant="primary"
+          size="4xl"
+          onClick={onStart}
+          className="w-4/5 max-w-2xl"
+        >
+          시작하기
+        </Button>
+      </main>
 
-          {/* Title */}
-          <h1 className="text-5xl sm:text-8xl font-bold text-gray-900 mb-8 sm:mb-10 leading-tight">
-            Skill Match
-            <span className="block gradient-text">Board</span>
-          </h1>
-
-          {/* Main message */}
-          <p className="text-3xl sm:text-4xl font-semibold text-gray-800 mb-8">
-            막연했던 희망 직무를 구체적으로 찾아보세요.
-          </p>
-
-          {/* CTA Button */}
-          <div className="relative z-20 mb-10">
-            <Button
-              type="button"
-              variant="primary"
-              size="4xl"
-              onClick={onStart}
-              className="relative z-20 w-full shadow-lg text-4xl"
-            >
-              직무 찾기 시작
-            </Button>
-          </div>
-
-          {/* Description */}
-          <p className="text-2xl sm:text-3xl text-gray-600 leading-relaxed">
-            간단한 질문에 답하면 관심 분야와 업무 성향을 분석해
-            <br />
-            나에게 맞는 직무를 추천해드립니다.
-          </p>
-
-          {/* Info cards */}
-          <div className="mt-8 sm:mt-16 grid grid-cols-1 sm:grid-cols-3 gap-6">
-            <div className="p-6 rounded-xl bg-white border border-gray-200">
-              <div className="text-3xl mb-3">⏱️</div>
-              <p className="text-sm text-gray-600">약 5분이 소요됩니다</p>
-            </div>
-            <div className="p-6 rounded-xl bg-white border border-gray-200">
-              <div className="text-3xl mb-3">🎯</div>
-              <p className="text-sm text-gray-600">3개의 맞춤형 직무를 추천받습니다</p>
-            </div>
-            <div className="p-6 rounded-xl bg-white border border-gray-200">
-              <div className="text-3xl mb-3">🔒</div>
-              <p className="text-sm text-gray-600">모든 정보는 안전하게 보호됩니다</p>
-            </div>
-          </div>
-        </div>
-      </div>
+      <p className="fixed inset-x-0 bottom-0 bg-[#FAF8F2] px-6 py-5 text-center text-xl leading-normal text-[#4D4B46]">
+        답하신 내용은 저장되지 않고, 끝나면 지워집니다.
+      </p>
     </div>
   )
 }

@@ -13,22 +13,26 @@ export function Button({
   disabled = false,
   ...props
 }: ButtonProps) {
-  const baseStyles = 'inline-flex items-center justify-center font-semibold rounded-lg transition-all duration-200 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2'
+  const baseStyles =
+    'inline-flex items-center justify-center rounded-xl font-bold leading-none transition-colors duration-200 disabled:cursor-not-allowed disabled:opacity-45 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-primary-600 focus-visible:ring-offset-4 focus-visible:ring-offset-[#FAF8F2]'
 
   const variants = {
-    primary: 'bg-primary-600 text-white hover:bg-primary-700 disabled:hover:bg-primary-600 focus-visible:ring-primary-600',
-    secondary: 'bg-primary-50 text-primary-600 border-2 border-primary-200 hover:border-primary-300 hover:bg-primary-100 focus-visible:ring-primary-600',
-    outline: 'border-2 border-gray-300 text-gray-900 hover:bg-gray-50 focus-visible:ring-gray-400',
+    primary:
+      'border-2 border-primary-600 bg-primary-600 text-white hover:bg-primary-700',
+    secondary:
+      'border-2 border-primary-600 bg-primary-100 text-[#0D0C0C] hover:bg-primary-200',
+    outline:
+      'border-2 border-[#4D4B46] bg-[#FAF8F2] text-[#0D0C0C] hover:bg-white',
   }
 
   const sizes = {
-    sm: 'px-4 py-2 text-sm min-h-10',
-    md: 'px-6 py-3 text-base min-h-12',
-    lg: 'px-8 py-4 text-lg min-h-16',
-    xl: 'px-8 py-6 text-2xl min-h-[5.5rem]',
-    '2xl': 'px-8 py-8 text-[1.75rem] min-h-[6.5rem]',
-    '3xl': 'px-8 py-10 text-[2rem] min-h-28',
-    '4xl': 'px-8 py-12 text-[2rem] min-h-32',
+    sm: 'min-h-14 px-5 py-3 text-xl',
+    md: 'min-h-14 px-6 py-3 text-xl',
+    lg: 'min-h-16 px-7 py-4 text-2xl',
+    xl: 'min-h-24 px-8 py-6 text-[2rem]',
+    '2xl': 'min-h-24 px-8 py-7 text-[2rem]',
+    '3xl': 'min-h-28 px-8 py-8 text-[2rem]',
+    '4xl': 'min-h-24 px-8 py-8 text-[2rem]',
   }
 
   return (

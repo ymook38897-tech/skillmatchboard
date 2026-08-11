@@ -35,10 +35,10 @@ export function HelpModal({ isOpen, onClose }: HelpModalProps) {
         aria-modal="true"
         aria-labelledby="help-title"
         tabIndex={-1}
-        className="bg-white rounded-xl max-w-2xl w-full"
+        className="w-full max-w-2xl rounded-xl bg-[#FAF8F2]"
       >
         <div className="flex flex-col items-center justify-center p-12 sm:p-16 text-center min-h-96">
-          <h2 id="help-title" className="text-3xl sm:text-4xl font-bold text-gray-900 mb-12">
+          <h2 id="help-title" className="mb-12 text-3xl font-extrabold text-[#0D0C0C] sm:text-4xl">
             직원의 도움이 필요하시면<br />가까운 직원에게 말씀해주세요.
           </h2>
           <Button

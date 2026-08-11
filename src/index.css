@@ -60,10 +60,18 @@
   }
 
   body {
-    @apply font-sans text-gray-900 bg-white antialiased;
+    @apply bg-[#FAF8F2] font-sans text-[#0D0C0C] antialiased;
+    font-synthesis: none;
   }
 
   html {
     scroll-behavior: smooth;
+  }
+
+  button,
+  input,
+  textarea,
+  select {
+    font: inherit;
   }
 }
