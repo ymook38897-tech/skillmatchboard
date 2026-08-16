@@ -1,44 +1,31 @@
 import { Button } from '../components/common/Button'
-import { TopBar } from '../components/common/TopBar'
 
 interface StartPageProps {
   onStart: () => void
   onHelp: () => void
 }
 
-export function StartPage({ onStart, onHelp }: StartPageProps) {
+export function StartPage({ onStart }: StartPageProps) {
   return (
-    <div className="v6-entry-page min-h-screen bg-[#FAF8F2] text-[#0D0C0C]">
-      <TopBar pageId="P1" onHelp={onHelp} />
-      <main className="mx-auto flex min-h-screen w-full max-w-4xl flex-col items-center justify-center px-6 pb-28 pt-32 text-center">
-        <p className="mb-5 text-2xl font-bold text-primary-700">
-          희망직종 찾기 도우미
-        </p>
-        <h1 className="mb-8 text-[2.75rem] font-extrabold leading-[1.25]">
-          나에게 맞는 일을<br />함께 찾아봐요
-        </h1>
-        <p className="mb-5 max-w-3xl text-2xl leading-relaxed text-[#4D4B46]">
-          나이와 일하기 어려운 점, 자격증을 살펴보고 신청서에 적을
-          희망직종을 보여드려요.
-        </p>
-        <p className="mb-12 text-3xl font-bold text-primary-800">
-          약 5분 걸려요
-        </p>
+    <div className="v6-entry-page min-h-[100svh] overflow-x-hidden rounded-[clamp(20px,4vw,32px)] bg-white text-[#0D0C0C]">
+      <main className="flex min-h-[100svh] w-full items-center justify-center px-6 py-8 text-center sm:px-12">
+        <div className="flex flex-col items-center gap-[clamp(32px,8vw,64px)]">
+          <h1 className="flex w-[min(491px,calc(100vw-3rem))] flex-col items-center gap-[clamp(36px,9vw,72px)] text-[clamp(44px,12vw,96px)] font-extrabold leading-[0.75]">
+            <span className="whitespace-nowrap">어떤 일을</span>
+            <span className="whitespace-nowrap">찾으시나요?</span>
+          </h1>
 
-        <Button
-          type="button"
-          variant="primary"
-          size="4xl"
-          onClick={onStart}
-          className="w-[82vw] max-w-[calc(100vw-3rem)]"
-        >
-          시작하기
-        </Button>
+          <Button
+            type="button"
+            variant="primary"
+            size="4xl"
+            onClick={onStart}
+            className="!h-[clamp(96px,17vw,136px)] !min-h-[clamp(96px,17vw,136px)] !w-[min(361px,calc(100vw-3rem))] !rounded-full !border-0 !px-[clamp(24px,8vw,64px)] !py-0 !text-[clamp(32px,8vw,64px)] !font-extrabold !leading-[0.625] whitespace-nowrap"
+          >
+            시작하기
+          </Button>
+        </div>
       </main>
-
-      <p className="fixed inset-x-0 bottom-0 bg-[#FAF8F2] px-6 py-5 text-center text-xl leading-normal text-[#4D4B46]">
-        답하신 내용은 저장되지 않고, 끝나면 지워집니다
-      </p>
     </div>
   )
 }

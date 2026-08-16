@@ -17,7 +17,8 @@ export function TopBar({
   animateProgress = true,
 }: TopBarProps) {
   const pageIndex = pageId ? FLOW_PAGE_IDS.indexOf(pageId) : -1
-  const usesEntryFlowTypography = pageId === 'P1' || pageId === 'P2'
+  const usesEntryFlowTypography =
+    pageId === 'P1' || pageId === 'P2' || pageId === 'P3'
   const resolvedLabel =
     progressLabel ??
     (pageIndex >= 0 ? `${pageIndex + 1} / ${FLOW_PAGE_IDS.length}` : null)

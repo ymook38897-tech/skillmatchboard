@@ -3,6 +3,9 @@ export const FLOW_PAGE_IDS = ['P1', 'P2', 'P3', 'P4', 'P5', 'P6'] as const
 export type FlowPageId = (typeof FLOW_PAGE_IDS)[number]
 
 export type AgeBandId =
+  | '18-29'
+  | '30-49'
+  | '50-64'
   | 'under-50'
   | '50-54'
   | '55-59'

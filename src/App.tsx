@@ -2,12 +2,13 @@ import { useEffect, useRef, useState } from 'react'
 import { HelpModal } from './components/common/HelpModal'
 import { FlowStatus } from './components/flow/FlowStatus'
 import { getCertificationLabel } from './data/profileOptions'
+import { AgeSelectionPage } from './pages/AgeSelectionPage'
 import { ApplicationGuidePage } from './pages/ApplicationGuidePage'
+import { BarrierSelectionPage } from './pages/BarrierSelectionPage'
 import { BasicInfoPage } from './pages/BasicInfoPage'
 import { QuestionPage } from './pages/QuestionPage'
 import { ResultPage } from './pages/ResultPage'
 import { StartPage } from './pages/StartPage'
-import { TutorialPage } from './pages/TutorialPage'
 import { mockQuestionDataSource } from './services/questionDataSource'
 import { mockRecommendationDataSource } from './services/recommendationDataSource'
 import type {
@@ -24,6 +25,8 @@ import type {
 
 const MAX_PROFILE_SELECTIONS = 5
 const MAX_PICKED_JOBS = 3
+
+type ProfileStep = 'barriers' | 'certifications'
 
 function createInitialProfile(): ProfileDraft {
   return {
@@ -50,6 +53,7 @@ function isAbortError(error: unknown): boolean {
 
 function App() {
   const [currentPage, setCurrentPage] = useState<FlowPageId>('P1')
+  const [profileStep, setProfileStep] = useState<ProfileStep>('barriers')
   const [profile, setProfile] = useState<ProfileDraft>(createInitialProfile)
   const [questions, setQuestions] = useState<TraitQuestion[]>([])
   const [loadedProfileKey, setLoadedProfileKey] = useState<string | null>(null)
@@ -76,12 +80,18 @@ function App() {
     setCurrentPage(page)
   }
 
+  const goToProfileStep = (step: ProfileStep) => {
+    setProfileStep(step)
+    goToPage('P3')
+  }
+
   const resetSession = (destination: FlowPageId = 'P1') => {
     requestIdRef.current += 1
     requestControllerRef.current?.abort()
     requestControllerRef.current = null
 
     setProfile(createInitialProfile())
+    setProfileStep('barriers')
     setQuestions([])
     setLoadedProfileKey(null)
     setResponses({})
@@ -108,12 +118,12 @@ function App() {
   const isCurrentRequest = (requestId: number, controller: AbortController) =>
     requestIdRef.current === requestId && !controller.signal.aborted
 
-  const loadQuestions = async () => {
+  const loadQuestions = async (profileSnapshot: ProfileDraft = profile) => {
     const { controller, requestId } = beginRequest('questions')
 
     try {
       const loadedQuestions = await mockQuestionDataSource.loadQuestions(
-        profile,
+        profileSnapshot,
         controller.signal,
       )
 
@@ -125,7 +135,7 @@ function App() {
       }
 
       setQuestions(loadedQuestions)
-      setLoadedProfileKey(getProfileKey(profile))
+      setLoadedProfileKey(getProfileKey(profileSnapshot))
       setResponses({})
       setRevealedQuestionCount(1)
       setRecommendations([])
@@ -209,9 +219,11 @@ function App() {
   const handleCertificationToggle = (certificationId: string) => {
     setProfile((previous) => {
       const selected = previous.certificationIds.includes(certificationId)
+      const otherSelectionCount = previous.certificationOther.trim() ? 1 : 0
       if (
         !selected &&
-        previous.certificationIds.length >= MAX_PROFILE_SELECTIONS
+        previous.certificationIds.length + otherSelectionCount >=
+          MAX_PROFILE_SELECTIONS
       ) {
         return previous
       }
@@ -235,15 +247,46 @@ function App() {
     }))
   }
 
+  const handleCertificationOtherChange = (value: string) => {
+    setProfile((previous) => {
+      const addsOtherSelection =
+        previous.certificationOther.trim().length === 0 &&
+        value.trim().length > 0
+
+      if (
+        addsOtherSelection &&
+        previous.certificationIds.length >= MAX_PROFILE_SELECTIONS
+      ) {
+        return previous
+      }
+
+      return {
+        ...previous,
+        certificationNone:
+          value.trim().length > 0 ? false : previous.certificationNone,
+        certificationOther: value,
+      }
+    })
+  }
+
   const handleProfileComplete = () => {
-    const profileKey = getProfileKey(profile)
+    const profileSnapshot: ProfileDraft =
+      profile.ageBand === null
+        ? { ...profile, ageBand: 'prefer-not-to-answer' }
+        : profile
+    const profileKey = getProfileKey(profileSnapshot)
+
+    if (profileSnapshot !== profile) {
+      setProfile(profileSnapshot)
+    }
+
     if (questions.length > 0 && loadedProfileKey === profileKey) {
       setTransitionState({ kind: 'idle' })
       goToPage('P4')
       return
     }
 
-    void loadQuestions()
+    void loadQuestions(profileSnapshot)
   }
 
   const handleQuestionAnswer = (
@@ -337,7 +380,7 @@ function App() {
         }}
         onReviewProfile={() => {
           setTransitionState({ kind: 'idle' })
-          goToPage('P3')
+          goToProfileStep('certifications')
         }}
         onHelp={() => setShowHelpModal(true)}
       />
@@ -354,28 +397,41 @@ function App() {
         break
       case 'P2':
         pageContent = (
-          <TutorialPage
-            onNext={() => goToPage('P3')}
-            onSkip={() => goToPage('P3')}
-            onPrev={() => goToPage('P1')}
+          <AgeSelectionPage
+            value={profile.ageBand}
+            onChange={handleAgeBandChange}
+            onNext={() => goToProfileStep('barriers')}
             onHelp={() => setShowHelpModal(true)}
           />
         )
         break
       case 'P3':
-        pageContent = (
-          <BasicInfoPage
-            profile={profile}
-            onAgeBandChange={handleAgeBandChange}
-            onBarrierToggle={handleBarrierToggle}
-            onBarrierNone={handleBarrierNone}
-            onCertificationToggle={handleCertificationToggle}
-            onCertificationNone={handleCertificationNone}
-            onNext={handleProfileComplete}
-            onPrev={() => goToPage('P2')}
-            onHelp={() => setShowHelpModal(true)}
-          />
-        )
+        pageContent =
+          profileStep === 'barriers' ? (
+            <BarrierSelectionPage
+              selectedIds={profile.barrierIds}
+              noneSelected={profile.barrierNone}
+              selectionLimit={MAX_PROFILE_SELECTIONS}
+              onToggle={handleBarrierToggle}
+              onNone={handleBarrierNone}
+              onNext={() => goToProfileStep('certifications')}
+              onPrev={() => goToPage('P2')}
+              onHelp={() => setShowHelpModal(true)}
+            />
+          ) : (
+            <BasicInfoPage
+              profile={profile}
+              mode="certifications"
+              onBarrierToggle={handleBarrierToggle}
+              onBarrierNone={handleBarrierNone}
+              onCertificationToggle={handleCertificationToggle}
+              onCertificationNone={handleCertificationNone}
+              onCertificationOtherChange={handleCertificationOtherChange}
+              onNext={handleProfileComplete}
+              onPrev={() => goToProfileStep('barriers')}
+              onHelp={() => setShowHelpModal(true)}
+            />
+          )
         break
       case 'P4':
         pageContent = (
@@ -386,7 +442,7 @@ function App() {
             showRecommendationAction={recommendations.length > 0}
             onAnswer={handleQuestionAnswer}
             onContinue={() => void loadRecommendations(responses)}
-            onPrev={() => goToPage('P3')}
+            onPrev={() => goToProfileStep('certifications')}
             onHelp={() => setShowHelpModal(true)}
           />
         )
