@@ -44,18 +44,18 @@ export function Modal({
         aria-modal="true"
         aria-labelledby="modal-title"
         tabIndex={-1}
-        className="bg-white rounded-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto"
+        className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-xl bg-[#FAF8F2]"
       >
         <div className="p-10 sm:p-12">
-          <h2 id="modal-title" className="text-5xl sm:text-6xl font-bold text-gray-900 mb-10">
+          <h2 id="modal-title" className="mb-10 text-5xl font-extrabold text-[#0D0C0C] sm:text-6xl">
             {title}
           </h2>
-          <div className="text-3xl leading-relaxed text-gray-700">
+          <div className="text-3xl leading-relaxed text-[#4D4B46]">
             {children}
           </div>
         </div>
 
-        <div className="sticky bottom-0 bg-white border-t border-gray-300 p-8 sm:p-10">
+        <div className="sticky bottom-0 border-t-2 border-primary-100 bg-[#FAF8F2] p-8 sm:p-10">
           <Button
             variant="primary"
             size="2xl"

@@ -1,149 +1,175 @@
 import { useState } from 'react'
 import { Button } from '../components/common/Button'
 import { Modal } from '../components/common/Modal'
-import { Result } from '../types'
+import { TopBar } from '../components/common/TopBar'
+import type { Recommendation } from '../types/flow'
 
 interface ResultPageProps {
-  results: Result[]
-  onReset: () => void
+  recommendations: Recommendation[]
+  pickedJobCodes: string[]
+  onTogglePick: (jobCode: string) => void
+  onMovePick: (jobCode: string, direction: 'up' | 'down') => void
+  onComplete: () => void
+  onPrev: () => void
+  onHelp: () => void
 }
 
-export function ResultPage({ results, onReset }: ResultPageProps) {
-  const [selectedJobId, setSelectedJobId] = useState<string | null>(null)
-  const selectedJob = results.find((r) => r.id === selectedJobId)
-
-  const handleCardClick = (jobId: string) => {
-    setSelectedJobId(jobId)
-  }
-
-  const handleCloseModal = () => {
-    setSelectedJobId(null)
-  }
+export function ResultPage({
+  recommendations,
+  pickedJobCodes,
+  onTogglePick,
+  onMovePick,
+  onComplete,
+  onPrev,
+  onHelp,
+}: ResultPageProps) {
+  const [detailJobCode, setDetailJobCode] = useState<string | null>(null)
+  const detailJob = recommendations.find(
+    (recommendation) => recommendation.jobCode === detailJobCode,
+  )
+  const pickedRecommendations = pickedJobCodes
+    .map((jobCode) =>
+      recommendations.find(
+        (recommendation) => recommendation.jobCode === jobCode,
+      ),
+    )
+    .filter((recommendation): recommendation is Recommendation =>
+      Boolean(recommendation),
+    )
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-50 px-4 sm:px-6 lg:px-8 py-12">
-      <div className="max-w-3xl mx-auto">
-        {/* Header */}
-        <div className="text-center mb-16">
-          <h1 className="text-5xl sm:text-6xl font-bold text-gray-900 mb-6">
-            당신에게 맞는 직무입니다!
-          </h1>
-          <p className="text-3xl text-gray-700 font-semibold">
-            추천 직업을 누르면 정보를 볼 수 있습니다
-          </p>
-        </div>
+    <div className="min-h-screen bg-[#FAF8F2] pb-40 text-[#0D0C0C]">
+      <TopBar pageId="P5" onHelp={onHelp} />
+      <main className="mx-auto w-full max-w-6xl px-6 pt-32">
+        <h1 className="mb-5 text-[2.75rem] font-extrabold leading-tight">
+          이런 일은 어떠세요?
+        </h1>
+        <p className="mb-8 text-2xl leading-normal text-[#4D4B46]">
+          마음에 드는 일을 1개 이상 담아 주세요. 최대 3개까지 담을 수
+          있어요.
+        </p>
 
-        {/* Results Cards */}
-        <div className="space-y-6 mb-16">
-          {results.map((result, index) => {
-            const rankColor =
-              index === 0
-                ? 'from-yellow-400 to-yellow-600'
-                : index === 1
-                  ? 'from-gray-300 to-gray-500'
-                  : 'from-orange-300 to-orange-600'
+        <div className="grid gap-5 md:grid-cols-3">
+          {recommendations.slice(0, 3).map((recommendation) => {
+            const pickedIndex = pickedJobCodes.indexOf(recommendation.jobCode)
+            const isPicked = pickedIndex >= 0
+            const pickDisabled = !isPicked && pickedJobCodes.length >= 3
 
             return (
-              <button
-                key={result.id}
-                onClick={() => handleCardClick(result.id)}
-                className="w-full rounded-lg overflow-hidden border-3 border-gray-300 bg-white shadow-md hover:shadow-lg transition-all duration-200 text-left focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-primary-600 focus-visible:ring-offset-2 min-h-[9.375rem]"
+              <article
+                key={recommendation.jobCode}
+                className={`flex min-h-[27rem] flex-col rounded-2xl border-4 p-6 ${
+                  isPicked
+                    ? 'border-primary-600 bg-primary-100'
+                    : 'border-[#4D4B46] bg-white'
+                }`}
               >
-                <div className="p-8 flex flex-col sm:flex-row gap-8 items-start h-full">
-                  {/* Rank Badge */}
-                  <div
-                    className={`w-20 h-20 rounded-full bg-gradient-to-br ${rankColor} flex-shrink-0 flex items-center justify-center text-white font-bold text-4xl`}
-                  >
-                    {index + 1}
-                  </div>
-
-                  {/* Content */}
-                  <div className="flex-1 min-w-0 flex flex-col justify-center">
-                    {/* Job Title */}
-                    <h2 className="text-4xl sm:text-5xl font-bold text-gray-900 mb-3">
-                      {result.jobTitle}
-                    </h2>
-                    <p className="text-2xl text-gray-600 mb-6">
-                      {result.description}
-                    </p>
-
-                    {/* Compatibility */}
-                    <div className="flex items-center gap-4 mb-6">
-                      <div className="flex-1 max-w-xs bg-gray-300 rounded-full h-4">
-                        <div
-                          className="bg-gradient-to-r from-primary-600 to-accent-600 h-4 rounded-full"
-                          style={{ width: `${result.compatibility}%` }}
-                        ></div>
-                      </div>
-                      <span className="font-bold text-3xl text-gray-900 w-20 text-right">
-                        {result.compatibility}%
-                      </span>
-                    </div>
-
-                    {/* Action Text */}
-                    <div className="text-2xl font-bold text-primary-600">
-                      눌러서 직업 정보 보기 →
-                    </div>
-                  </div>
+                <div className="mb-4 text-xl font-bold text-primary-800">
+                  {isPicked ? `${pickedIndex + 1}순위로 담았어요` : '추천 직무'}
                 </div>
-              </button>
+                <h2 className="mb-4 text-3xl font-extrabold leading-snug">
+                  {recommendation.formalName}
+                </h2>
+                <p className="mb-5 text-2xl leading-normal text-[#4D4B46]">
+                  {recommendation.oneLiner}
+                </p>
+                <p className="mb-7 rounded-xl bg-[#FAF8F2] p-4 text-xl leading-normal">
+                  {recommendation.reason}
+                </p>
+                <div className="mt-auto grid gap-3">
+                  <Button
+                    variant="outline"
+                    size="lg"
+                    onClick={() => setDetailJobCode(recommendation.jobCode)}
+                  >
+                    자세히
+                  </Button>
+                  <Button
+                    variant={isPicked ? 'secondary' : 'primary'}
+                    size="lg"
+                    disabled={pickDisabled}
+                    onClick={() => onTogglePick(recommendation.jobCode)}
+                  >
+                    {isPicked ? '담기 취소' : '담기'}
+                  </Button>
+                </div>
+              </article>
             )
           })}
         </div>
 
-        {/* Reset Button */}
-        <div className="mt-16">
+        {pickedRecommendations.length > 0 && (
+          <section className="mt-8 rounded-2xl border-2 border-primary-200 bg-white p-6">
+            <h2 className="mb-5 text-3xl font-extrabold">담은 순서</h2>
+            <ol className="space-y-3">
+              {pickedRecommendations.map((recommendation, index) => (
+                <li
+                  key={recommendation.jobCode}
+                  className="grid min-h-20 grid-cols-[3rem_1fr_auto] items-center gap-3 rounded-xl bg-primary-100 px-4 py-3"
+                >
+                  <span className="text-3xl font-extrabold">{index + 1}</span>
+                  <span className="text-2xl font-bold">
+                    {recommendation.formalName}
+                  </span>
+                  <div className="flex gap-3">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      disabled={index === 0}
+                      onClick={() => onMovePick(recommendation.jobCode, 'up')}
+                    >
+                      위로
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      disabled={index === pickedRecommendations.length - 1}
+                      onClick={() => onMovePick(recommendation.jobCode, 'down')}
+                    >
+                      아래로
+                    </Button>
+                  </div>
+                </li>
+              ))}
+            </ol>
+          </section>
+        )}
+      </main>
+
+      <footer className="fixed inset-x-0 bottom-0 border-t-2 border-primary-100 bg-[#FAF8F2] px-6 py-4">
+        <div className="mx-auto grid max-w-6xl grid-cols-2 gap-4">
+          <Button variant="outline" size="xl" onClick={onPrev}>
+            이전
+          </Button>
           <Button
             variant="primary"
-            size="2xl"
-            onClick={onReset}
-            className="w-full text-3xl"
+            size="xl"
+            onClick={onComplete}
+            disabled={pickedJobCodes.length === 0}
           >
-            처음부터 다시 하기
+            다 골랐어요
           </Button>
         </div>
-      </div>
+      </footer>
 
-      {/* Job Details Modal */}
-      {selectedJob && (
+      {detailJob && (
         <Modal
-          isOpen={!!selectedJob}
-          onClose={handleCloseModal}
-          title={selectedJob.jobTitle}
-          closeButtonLabel="닫기"
+          isOpen
+          onClose={() => setDetailJobCode(null)}
+          title={detailJob.formalName}
         >
-          <div className="space-y-12">
-            {/* What does this job do? */}
-            <div>
-              <h3 className="text-4xl sm:text-5xl font-semibold text-gray-900 mb-8">
-                이 직업은 어떤 일을 하나요?
-              </h3>
-              <p className="text-3xl text-gray-700 leading-relaxed mb-8">
-                {selectedJob.description}
-              </p>
-              {selectedJob.mainDuties.slice(0, 3).length > 0 && (
-                <div className="space-y-4">
-                  {selectedJob.mainDuties.slice(0, 3).map((duty, idx) => (
-                    <div key={idx} className="flex items-start gap-4">
-                      <span className="text-accent-600 font-bold text-3xl flex-shrink-0">
-                        •
-                      </span>
-                      <span className="text-3xl text-gray-700">{duty}</span>
-                    </div>
+          <div className="space-y-8">
+            <p>{detailJob.oneLiner}</p>
+            {detailJob.tasks.length > 0 && (
+              <div>
+                <h3 className="mb-4 font-extrabold">주로 하는 일</h3>
+                <ul className="space-y-3">
+                  {detailJob.tasks.slice(0, 3).map((task) => (
+                    <li key={task}>· {task}</li>
                   ))}
-                </div>
-              )}
-            </div>
-
-            {/* Why this job? */}
-            <div>
-              <h3 className="text-4xl sm:text-5xl font-semibold text-gray-900 mb-8">
-                왜 이 직업을 추천했나요?
-              </h3>
-              <p className="text-3xl text-gray-700 leading-relaxed">
-                {selectedJob.reason}
-              </p>
-            </div>
+                </ul>
+              </div>
+            )}
           </div>
         </Modal>
       )}
