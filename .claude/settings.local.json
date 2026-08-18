@@ -8,7 +8,11 @@
       "PowerShell(Start-Process -NoNewWindow npm -ArgumentList \"run dev\" -RedirectStandardOutput \"dev-server.log\")",
       "PowerShell(Get-Command *)",
       "Bash(npm run *)",
-      "Bash(npm install *)"
+      "Bash(npm install *)",
+      "Bash(curl -s -w \"\\\\nStatus: %{http_code}\\\\n\" https://job-db-api.onrender.com/api/health)",
+      "Bash(curl -s -w \"\\\\nStatus: %{http_code}\\\\n\" https://job-db-api.onrender.com/api/jobs)",
+      "Bash(curl -s -w \"\\\\nStatus: %{http_code}\\\\n\" \"https://job-db-api.onrender.com/api/jobs?recommendableOnly=true\")",
+      "Bash(curl -s -w \"\\\\nStatus: %{http_code}\\\\n\" https://job-db-api.onrender.com/api/categories)"
     ]
   }
 }
