@@ -20,7 +20,7 @@ import { BarrierSelectionPage } from './pages/BarrierSelectionPage'
 import { CertificationSelectionPage } from './pages/CertificationSelectionPage'
 import { CounselorResultPage } from './pages/CounselorResultPage'
 import { ExperienceSelectionPage } from './pages/ExperienceSelectionPage'
-import { JobCategoryPage } from './pages/JobCategoryPage'
+import { JobCategoryPage, JOB_INTEREST_OPTIONS } from './pages/JobCategoryPage'
 import { QuestionPage } from './pages/QuestionPage'
 import { ResultIntroPage } from './pages/ResultIntroPage'
 import { StartPage } from './pages/StartPage'
@@ -400,7 +400,7 @@ function App() {
         : profile
     const profileKey = getProfileKey(profileSnapshot)
 
-    if (profileSnapshot !== profile) {
+    if (profile.ageBand === null) {
       setProfile(profileSnapshot)
     }
 
@@ -501,8 +501,8 @@ function App() {
       ? selectedJobCategories
           .map(
             (categoryId) =>
-              CERTIFICATION_CATEGORIES.find(
-                (category) => category.id === categoryId,
+              JOB_INTEREST_OPTIONS.find(
+                (option) => option.id === categoryId,
               )?.label ?? categoryId,
           )
           .join(' · ')

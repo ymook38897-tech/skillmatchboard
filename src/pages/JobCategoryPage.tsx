@@ -22,7 +22,13 @@ interface JobCategoryPageProps {
   onHelp: () => void
 }
 
-const JOB_INTEREST_OPTIONS = [
+export type JobInterestOption = {
+  id: string
+  label: string
+  icon: string
+}
+
+export const JOB_INTEREST_OPTIONS: readonly JobInterestOption[] = [
   { id: 'driving-transport', label: '운전·운송', icon: drivingIcon },
   { id: 'cooking-food', label: '조리·음식', icon: cookingIcon },
   { id: 'facility-safety', label: '시설·안전', icon: safetyIcon },
@@ -31,7 +37,7 @@ const JOB_INTEREST_OPTIONS = [
   { id: 'technical-skills', label: '기술·기능', icon: technicalIcon },
   { id: 'beauty-service', label: '미용·서비스', icon: beautyIcon },
   { id: 'other', label: '기타', icon: otherIcon },
-] as const
+]
 
 const MAX_JOB_INTERESTS = 3
 
