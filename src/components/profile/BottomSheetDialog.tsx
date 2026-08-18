@@ -68,8 +68,17 @@ export function BottomSheetDialog({
     }
   }, [])
 
+  const handleBackdropClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (e.target === e.currentTarget) {
+      onCloseRef.current()
+    }
+  }
+
   return (
-    <div className="fixed inset-0 z-[60] flex items-end justify-center bg-[rgba(13,12,12,0.52)]">
+    <div
+      className="fixed inset-0 z-[60] flex items-end justify-center bg-[rgba(13,12,12,0.52)]"
+      onClick={handleBackdropClick}
+    >
       <div
         ref={sheetRef}
         role="dialog"

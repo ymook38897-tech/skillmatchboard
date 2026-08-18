@@ -394,6 +394,10 @@ function App() {
   }
 
   const handleProfileComplete = () => {
+    if (!profile.certificationNone && profile.certificationIds.length === 0) {
+      return
+    }
+
     const profileSnapshot: ProfileDraft =
       profile.ageBand === null
         ? { ...profile, ageBand: 'prefer-not-to-answer' }
@@ -579,7 +583,11 @@ function App() {
               noneSelected={profile.experienceNone}
               onToggle={handleExperienceToggle}
               onNone={handleExperienceNone}
-              onNext={() => goToProfileStep('barriers')}
+              onNext={() => {
+                if (profile.experienceNone || profile.experienceCategoryIds.length > 0) {
+                  goToProfileStep('barriers')
+                }
+              }}
               onPrev={() => goToPage('P2')}
               onHelp={() => setShowHelpModal(true)}
             />
@@ -589,7 +597,11 @@ function App() {
               noneSelected={profile.barrierNone}
               onToggle={handleBarrierToggle}
               onNone={handleBarrierNone}
-              onNext={() => goToProfileStep('work-preferences')}
+              onNext={() => {
+                if (profile.barrierNone || profile.barrierIds.length > 0) {
+                  goToProfileStep('work-preferences')
+                }
+              }}
               onPrev={() => goToProfileStep('experiences')}
               onHelp={() => setShowHelpModal(true)}
             />
@@ -597,7 +609,12 @@ function App() {
             <WorkPreferencePage
               value={workPreferences}
               onChange={handleWorkPreferenceChange}
-              onNext={() => goToProfileStep('job-interests')}
+              onNext={() => {
+                const allAnswered = Object.values(workPreferences).every((v) => v !== null)
+                if (allAnswered) {
+                  goToProfileStep('job-interests')
+                }
+              }}
               onPrev={() => goToProfileStep('barriers')}
               onHelp={() => setShowHelpModal(true)}
             />
@@ -607,7 +624,11 @@ function App() {
               jobCategoryUnknown={jobCategoryUnknown}
               onJobCategoryToggle={handleJobCategoryToggle}
               onJobCategoryUnknown={handleJobCategoryUnknown}
-              onNext={() => goToProfileStep('certifications')}
+              onNext={() => {
+                if (jobCategoryUnknown || selectedJobCategories.length > 0) {
+                  goToProfileStep('certifications')
+                }
+              }}
               onPrev={() => goToProfileStep('work-preferences')}
               onHelp={() => setShowHelpModal(true)}
             />
