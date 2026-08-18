@@ -1,20 +1,33 @@
 import { useEffect, useRef, useState } from 'react'
 import { HelpModal } from './components/common/HelpModal'
 import { FlowStatus } from './components/flow/FlowStatus'
-import { getCertificationLabel } from './data/profileOptions'
-import { AgeSelectionPage } from './pages/AgeSelectionPage'
+import {
+  CERTIFICATION_CATEGORIES,
+  getCertificationLabel,
+  type CertificationCategoryId,
+} from './data/profileOptions'
+import {
+  createInitialWorkPreferenceDraft,
+  type WorkPreferenceDraft,
+  type WorkPreferenceOptionId,
+  type WorkPreferenceQuestionId,
+} from './data/workPreferenceOptions'
 import { ApplicationGuidePage } from './pages/ApplicationGuidePage'
 import { BarrierSelectionPage } from './pages/BarrierSelectionPage'
-import { BasicInfoPage } from './pages/BasicInfoPage'
+import { CertificationSelectionPage } from './pages/CertificationSelectionPage'
+import { ExperienceSelectionPage } from './pages/ExperienceSelectionPage'
+import { JobCategoryPage } from './pages/JobCategoryPage'
 import { QuestionPage } from './pages/QuestionPage'
 import { ResultPage } from './pages/ResultPage'
 import { StartPage } from './pages/StartPage'
+import { TutorialPage } from './pages/TutorialPage'
+import { WorkPreferencePage } from './pages/WorkPreferencePage'
 import { mockQuestionDataSource } from './services/questionDataSource'
 import { mockRecommendationDataSource } from './services/recommendationDataSource'
 import type {
-  AgeBandId,
   FlowPageId,
   FlowTransitionState,
+  ExperienceCategoryId,
   ProfileDraft,
   Recommendation,
   TraitQuestion,
@@ -26,11 +39,19 @@ import type {
 const MAX_PROFILE_SELECTIONS = 5
 const MAX_PICKED_JOBS = 3
 
-type ProfileStep = 'barriers' | 'certifications'
+type ProfileStep =
+  | 'experiences'
+  | 'barriers'
+  | 'work-preferences'
+  | 'job-interests'
+  | 'certifications'
+type BarrierDetailSelections = Record<string, string[]>
 
 function createInitialProfile(): ProfileDraft {
   return {
     ageBand: null,
+    experienceCategoryIds: [],
+    experienceNone: false,
     barrierIds: [],
     barrierNone: false,
     certificationIds: [],
@@ -42,6 +63,7 @@ function createInitialProfile(): ProfileDraft {
 function getProfileKey(profile: ProfileDraft): string {
   return JSON.stringify({
     ...profile,
+    experienceCategoryIds: [...profile.experienceCategoryIds].sort(),
     barrierIds: [...profile.barrierIds].sort(),
     certificationIds: [...profile.certificationIds].sort(),
   })
@@ -53,8 +75,17 @@ function isAbortError(error: unknown): boolean {
 
 function App() {
   const [currentPage, setCurrentPage] = useState<FlowPageId>('P1')
-  const [profileStep, setProfileStep] = useState<ProfileStep>('barriers')
+  const [profileStep, setProfileStep] = useState<ProfileStep>('experiences')
   const [profile, setProfile] = useState<ProfileDraft>(createInitialProfile)
+  const [barrierDetailSelections, setBarrierDetailSelections] =
+    useState<BarrierDetailSelections>({})
+  const [workPreferences, setWorkPreferences] =
+    useState<WorkPreferenceDraft>(createInitialWorkPreferenceDraft)
+  const [selectedJobCategories, setSelectedJobCategories] = useState<string[]>(
+    [],
+  )
+  const [jobCategoryUnknown, setJobCategoryUnknown] = useState(false)
+  const [jobCategoryPage, setJobCategoryPage] = useState(0)
   const [questions, setQuestions] = useState<TraitQuestion[]>([])
   const [loadedProfileKey, setLoadedProfileKey] = useState<string | null>(null)
   const [responses, setResponses] = useState<TraitResponseMap>({})
@@ -91,7 +122,12 @@ function App() {
     requestControllerRef.current = null
 
     setProfile(createInitialProfile())
-    setProfileStep('barriers')
+    setBarrierDetailSelections({})
+    setWorkPreferences(createInitialWorkPreferenceDraft())
+    setSelectedJobCategories([])
+    setJobCategoryUnknown(false)
+    setJobCategoryPage(0)
+    setProfileStep('experiences')
     setQuestions([])
     setLoadedProfileKey(null)
     setResponses({})
@@ -117,6 +153,24 @@ function App() {
 
   const isCurrentRequest = (requestId: number, controller: AbortController) =>
     requestIdRef.current === requestId && !controller.signal.aborted
+
+  const handleExperienceToggle = (categoryId: ExperienceCategoryId) => {
+    setProfile((previous) => ({
+      ...previous,
+      experienceNone: false,
+      experienceCategoryIds: previous.experienceCategoryIds.includes(categoryId)
+        ? previous.experienceCategoryIds.filter((id) => id !== categoryId)
+        : [...previous.experienceCategoryIds, categoryId],
+    }))
+  }
+
+  const handleExperienceNone = () => {
+    setProfile((previous) => ({
+      ...previous,
+      experienceNone: !previous.experienceNone,
+      experienceCategoryIds: [],
+    }))
+  }
 
   const loadQuestions = async (profileSnapshot: ProfileDraft = profile) => {
     const { controller, requestId } = beginRequest('questions')
@@ -187,16 +241,9 @@ function App() {
     }
   }
 
-  const handleAgeBandChange = (ageBand: AgeBandId) => {
-    setProfile((previous) => ({ ...previous, ageBand }))
-  }
-
   const handleBarrierToggle = (barrierId: string) => {
     setProfile((previous) => {
       const selected = previous.barrierIds.includes(barrierId)
-      if (!selected && previous.barrierIds.length >= MAX_PROFILE_SELECTIONS) {
-        return previous
-      }
 
       return {
         ...previous,
@@ -209,6 +256,7 @@ function App() {
   }
 
   const handleBarrierNone = () => {
+    setBarrierDetailSelections({})
     setProfile((previous) => ({
       ...previous,
       barrierNone: !previous.barrierNone,
@@ -216,24 +264,106 @@ function App() {
     }))
   }
 
-  const handleCertificationToggle = (certificationId: string) => {
+  const handleBarrierDetailApply = (
+    barrierId: string,
+    detailIds: string[],
+  ) => {
+    const uniqueDetailIds = [...new Set(detailIds)]
+    const alreadySelected = profile.barrierIds.includes(barrierId)
+
+    if (
+      uniqueDetailIds.length > 0 &&
+      !alreadySelected &&
+      profile.barrierIds.length >= MAX_PROFILE_SELECTIONS
+    ) {
+      return
+    }
+
+    setBarrierDetailSelections((previous) => {
+      if (uniqueDetailIds.length > 0) {
+        return { ...previous, [barrierId]: uniqueDetailIds }
+      }
+
+      const next = { ...previous }
+      delete next[barrierId]
+      return next
+    })
+
+    setProfile((previous) => ({
+      ...previous,
+      barrierNone: false,
+      barrierIds:
+        uniqueDetailIds.length === 0
+          ? previous.barrierIds.filter((id) => id !== barrierId)
+          : previous.barrierIds.includes(barrierId)
+            ? previous.barrierIds
+            : [...previous.barrierIds, barrierId],
+    }))
+  }
+
+  const handleWorkPreferenceChange = (
+    questionId: WorkPreferenceQuestionId,
+    optionId: WorkPreferenceOptionId,
+  ) => {
+    setWorkPreferences((previous) => ({
+      ...previous,
+      [questionId]: optionId,
+    }))
+  }
+
+  const handleJobCategoryToggle = (categoryId: string) => {
+    setJobCategoryUnknown(false)
+    setSelectedJobCategories((previous) => {
+      if (previous.includes(categoryId)) {
+        return previous.filter((id) => id !== categoryId)
+      }
+
+      return previous.length >= 3 ? previous : [...previous, categoryId]
+    })
+  }
+
+  const handleJobCategoryUnknown = (unknown: boolean) => {
+    setJobCategoryUnknown(unknown)
+    if (unknown) {
+      setSelectedJobCategories([])
+    }
+  }
+
+  const handleCertificationCategoryApply = (
+    categoryId: CertificationCategoryId,
+    certificationIds: string[],
+  ) => {
+    const category = CERTIFICATION_CATEGORIES.find(
+      (candidate) => candidate.id === categoryId,
+    )
+    if (!category) return
+
+    const allowedOptionIds = new Set<string>(
+      category.options.map((option) => option.id),
+    )
+    const selectedIds = [...new Set(certificationIds)]
+      .filter((id) => allowedOptionIds.has(id))
+      .slice(0, 1)
+
     setProfile((previous) => {
-      const selected = previous.certificationIds.includes(certificationId)
+      const outsideIds = previous.certificationIds.filter(
+        (id) => !allowedOptionIds.has(id),
+      )
       const otherSelectionCount = previous.certificationOther.trim() ? 1 : 0
       if (
-        !selected &&
-        previous.certificationIds.length + otherSelectionCount >=
-          MAX_PROFILE_SELECTIONS
+        outsideIds.length + selectedIds.length + otherSelectionCount >
+        MAX_PROFILE_SELECTIONS
       ) {
         return previous
       }
 
       return {
         ...previous,
-        certificationNone: false,
-        certificationIds: selected
-          ? previous.certificationIds.filter((id) => id !== certificationId)
-          : [...previous.certificationIds, certificationId],
+        certificationNone:
+          selectedIds.length > 0 ? false : previous.certificationNone,
+        certificationIds: [...outsideIds, ...selectedIds],
+        certificationOther:
+          categoryId === 'other' ? '' : previous.certificationOther,
       }
     })
   }
@@ -245,28 +375,6 @@ function App() {
       certificationIds: [],
       certificationOther: '',
     }))
-  }
-
-  const handleCertificationOtherChange = (value: string) => {
-    setProfile((previous) => {
-      const addsOtherSelection =
-        previous.certificationOther.trim().length === 0 &&
-        value.trim().length > 0
-
-      if (
-        addsOtherSelection &&
-        previous.certificationIds.length >= MAX_PROFILE_SELECTIONS
-      ) {
-        return previous
-      }
-
-      return {
-        ...previous,
-        certificationNone:
-          value.trim().length > 0 ? false : previous.certificationNone,
-        certificationOther: value,
-      }
-    })
   }
 
   const handleProfileComplete = () => {
@@ -397,38 +505,65 @@ function App() {
         break
       case 'P2':
         pageContent = (
-          <AgeSelectionPage
-            value={profile.ageBand}
-            onChange={handleAgeBandChange}
-            onNext={() => goToProfileStep('barriers')}
+          <TutorialPage
+            onNext={() => goToProfileStep('experiences')}
+            onPrev={() => goToPage('P1')}
             onHelp={() => setShowHelpModal(true)}
           />
         )
         break
       case 'P3':
         pageContent =
-          profileStep === 'barriers' ? (
-            <BarrierSelectionPage
-              selectedIds={profile.barrierIds}
-              noneSelected={profile.barrierNone}
-              selectionLimit={MAX_PROFILE_SELECTIONS}
-              onToggle={handleBarrierToggle}
-              onNone={handleBarrierNone}
-              onNext={() => goToProfileStep('certifications')}
+          profileStep === 'experiences' ? (
+            <ExperienceSelectionPage
+              selectedIds={profile.experienceCategoryIds}
+              noneSelected={profile.experienceNone}
+              onToggle={handleExperienceToggle}
+              onNone={handleExperienceNone}
+              onNext={() => goToProfileStep('barriers')}
               onPrev={() => goToPage('P2')}
               onHelp={() => setShowHelpModal(true)}
             />
-          ) : (
-            <BasicInfoPage
-              profile={profile}
-              mode="certifications"
-              onBarrierToggle={handleBarrierToggle}
-              onBarrierNone={handleBarrierNone}
-              onCertificationToggle={handleCertificationToggle}
-              onCertificationNone={handleCertificationNone}
-              onCertificationOtherChange={handleCertificationOtherChange}
-              onNext={handleProfileComplete}
+          ) : profileStep === 'barriers' ? (
+            <BarrierSelectionPage
+              selectedIds={profile.barrierIds}
+              noneSelected={profile.barrierNone}
+              onToggle={handleBarrierToggle}
+              onNone={handleBarrierNone}
+              onNext={() => goToProfileStep('work-preferences')}
+              onPrev={() => goToProfileStep('experiences')}
+              onHelp={() => setShowHelpModal(true)}
+            />
+          ) : profileStep === 'work-preferences' ? (
+            <WorkPreferencePage
+              value={workPreferences}
+              onChange={handleWorkPreferenceChange}
+              onNext={() => goToProfileStep('job-interests')}
               onPrev={() => goToProfileStep('barriers')}
+              onHelp={() => setShowHelpModal(true)}
+            />
+          ) : profileStep === 'job-interests' ? (
+            <JobCategoryPage
+              selectedJobCategories={selectedJobCategories}
+              jobCategoryUnknown={jobCategoryUnknown}
+              onJobCategoryToggle={handleJobCategoryToggle}
+              onJobCategoryUnknown={handleJobCategoryUnknown}
+              onNext={() => goToProfileStep('certifications')}
+              onPrev={() => goToProfileStep('work-preferences')}
+              currentPage={jobCategoryPage}
+              onPageChange={setJobCategoryPage}
+              onHelp={() => setShowHelpModal(true)}
+            />
+          ) : (
+            <CertificationSelectionPage
+              selectedIds={profile.certificationIds}
+              noneSelected={profile.certificationNone}
+              otherValue={profile.certificationOther}
+              selectionLimit={MAX_PROFILE_SELECTIONS}
+              onApplyCategory={handleCertificationCategoryApply}
+              onNone={handleCertificationNone}
+              onNext={handleProfileComplete}
+              onPrev={() => goToProfileStep('job-interests')}
               onHelp={() => setShowHelpModal(true)}
             />
           )
@@ -477,7 +612,11 @@ function App() {
   return (
     <>
       {pageContent}
-      <HelpModal isOpen={showHelpModal} onClose={() => setShowHelpModal(false)} />
+      <HelpModal
+        isOpen={showHelpModal}
+        onClose={() => setShowHelpModal(false)}
+        variant={currentPage === 'P2' ? 'tutorial' : 'default'}
+      />
     </>
   )
 }

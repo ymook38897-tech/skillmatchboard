@@ -13,8 +13,20 @@ export type AgeBandId =
   | '65-plus'
   | 'prefer-not-to-answer'
 
+export type ExperienceCategoryId =
+  | 'driving-transport'
+  | 'cooking-food'
+  | 'facility-safety'
+  | 'office-accounting'
+  | 'care-welfare'
+  | 'technical-skills'
+  | 'beauty-service'
+  | 'other'
+
 export interface ProfileDraft {
   ageBand: AgeBandId | null
+  experienceCategoryIds: ExperienceCategoryId[]
+  experienceNone: boolean
   barrierIds: string[]
   barrierNone: boolean
   certificationIds: string[]
