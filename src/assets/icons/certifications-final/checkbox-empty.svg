@@ -1,0 +1,11 @@
+<svg preserveAspectRatio="none" overflow="visible" style="display: block;" width="34" height="34" viewBox="0 0 34 34" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g id="Checkbox/empty" clip-path="url(#clip0_0_22)">
+<path id="Vector" d="M24 2H10C5.58172 2 2 5.58172 2 10V24C2 28.4183 5.58172 32 10 32H24C28.4183 32 32 28.4183 32 24V10C32 5.58172 28.4183 2 24 2Z" fill="white" stroke="#91A49E" stroke-width="3"/>
+</g>
+<defs>
+<clipPath id="clip0_0_22">
+<rect width="34" height="34" fill="white"/>
+</clipPath>
+</defs>
+</svg>
+
