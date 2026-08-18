@@ -1,28 +1,66 @@
 import { useId, useMemo, useState } from 'react'
-import radioDotIcon from '../../assets/icons/certifications/radio-dot.svg'
-import selectedRadioIcon from '../../assets/icons/certifications/radio-selected.svg'
-import unselectedRadioIcon from '../../assets/icons/certifications/radio-unselected.svg'
-import searchMenuIcon from '../../assets/icons/certifications/search-menu.svg'
+import checkboxEmptyIcon from '../../assets/icons/certifications-final/checkbox-empty.svg'
+import checkboxSelectedIcon from '../../assets/icons/certifications-final/checkbox-selected.svg'
+import scrollDownIcon from '../../assets/icons/certifications-final/scroll-down.svg'
+import searchIcon from '../../assets/icons/certifications-final/search.svg'
 import type { CertificationCategory } from '../../data/profileOptions'
 import { Button } from '../common/Button'
 import { BottomSheetDialog } from './BottomSheetDialog'
 
 interface CertificationDetailSheetProps {
   category: CertificationCategory
-  selectedValue: string | null
+  selectedValues: readonly string[]
   outsideSelectionCount: number
   selectionLimit: number
-  onChange: (optionId: string) => void
+  onToggle: (optionId: string) => void
   onApply: () => void
   onClose: () => void
 }
 
+interface OptionButtonProps {
+  id: string
+  label: string
+  selected: boolean
+  disabled: boolean
+  onToggle: (id: string) => void
+}
+
+function OptionButton({
+  id,
+  label,
+  selected,
+  disabled,
+  onToggle,
+}: OptionButtonProps) {
+  return (
+    <button
+      type="button"
+      aria-pressed={selected}
+      disabled={disabled}
+      onClick={() => onToggle(id)}
+      className={`flex h-[70px] w-full items-center rounded-[15px] border px-[17px] text-left text-[clamp(19px,2.75vw,22px)] font-bold leading-[normal] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#5E7E72] focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-40 ${
+        selected
+          ? 'border-[#597A70] bg-[#DCEAE4] text-[#38564E]'
+          : 'border-[#DBE0DE] bg-white text-[#171C1A]'
+      }`}
+    >
+      <img
+        src={selected ? checkboxSelectedIcon : checkboxEmptyIcon}
+        alt=""
+        aria-hidden="true"
+        className="mr-[22px] size-[34px] shrink-0"
+      />
+      <span className="min-w-0 truncate">{label}</span>
+    </button>
+  )
+}
+
 export function CertificationDetailSheet({
   category,
-  selectedValue,
+  selectedValues,
   outsideSelectionCount,
   selectionLimit,
-  onChange,
+  onToggle,
   onApply,
   onClose,
 }: CertificationDetailSheetProps) {
@@ -36,42 +74,60 @@ export function CertificationDetailSheet({
     return category.options.filter((option) => option.label.includes(query))
   }, [category.options, searchQuery])
 
-  const selectedIndex = visibleOptions.findIndex(
-    (option) => option.id === selectedValue,
+  const popularOptionIds = new Set(
+    category.options.slice(0, Math.min(2, category.options.length)).map(
+      (option) => option.id,
+    ),
   )
-  const visualCenterIndex =
-    selectedIndex >= 0
-      ? selectedIndex
-      : Math.min(2, Math.max(0, visibleOptions.length - 1))
-  const atSelectionLimit =
-    selectedValue === null && outsideSelectionCount >= selectionLimit
+  const popularOptions = visibleOptions.filter((option) =>
+    popularOptionIds.has(option.id),
+  )
+  const otherOptions = visibleOptions.filter(
+    (option) => !popularOptionIds.has(option.id),
+  )
+  const selectionLimitReached =
+    outsideSelectionCount + selectedValues.length >= selectionLimit
+
+  const renderOption = (option: (typeof category.options)[number]) => {
+    const selected = selectedValues.includes(option.id)
+    return (
+      <OptionButton
+        key={option.id}
+        id={option.id}
+        label={option.label}
+        selected={selected}
+        disabled={selectionLimitReached && !selected}
+        onToggle={onToggle}
+      />
+    )
+  }
 
   return (
     <BottomSheetDialog
       labelledBy={titleId}
       onClose={onClose}
-      surfaceClassName="h-[min(860px,calc(100svh-24px))] overflow-y-auto"
+      surfaceClassName="h-[min(842px,calc(100svh-24px))] overflow-y-auto"
     >
-      <div className="relative min-h-[860px]">
+      <div className="relative min-h-[842px]">
         <div
           aria-hidden="true"
-          className="absolute left-1/2 top-[22px] h-2 w-16 -translate-x-1/2 rounded-full bg-primary-600"
+          className="absolute left-1/2 top-4 h-2 w-[140px] -translate-x-1/2 rounded-full bg-[#5F7D74]"
         />
 
         <h2
           id={titleId}
-          className="absolute left-[clamp(24px,6vw,48px)] right-[clamp(24px,6vw,48px)] top-11 text-[clamp(32px,5vw,40px)] font-extrabold leading-[1.6667]"
+          className="absolute left-[clamp(20px,4.25vw,34px)] right-[clamp(20px,4.25vw,34px)] top-[54px] text-[clamp(28px,4.25vw,34px)] font-extrabold leading-[normal]"
         >
           {category.label} 자격증
         </h2>
 
-        <label className="absolute left-[clamp(24px,6vw,48px)] right-[clamp(24px,6vw,48px)] top-[116px] h-[72px]">
+        <label className="absolute left-[clamp(20px,4.25vw,34px)] right-[clamp(20px,4.25vw,34px)] top-[118px] h-[70px]">
           <span className="sr-only">자격증 검색</span>
           <img
-            src={searchMenuIcon}
+            src={searchIcon}
             alt=""
             aria-hidden="true"
-            className="pointer-events-none absolute left-5 top-1/2 z-10 h-3 w-[18px] -translate-y-1/2"
+            className="pointer-events-none absolute left-[18px] top-1/2 z-10 size-[34px] -translate-y-1/2"
           />
           <input
             type="search"
@@ -80,7 +136,7 @@ export function CertificationDetailSheet({
             aria-describedby={resultStatusId}
             placeholder="자격증 검색"
             autoComplete="off"
-            className="h-full w-full rounded-[clamp(22px,4vw,32px)] border-0 bg-primary-100 pl-14 pr-6 text-[clamp(20px,3vw,24px)] font-bold text-[#0D0C0C] outline-none placeholder:text-[#0D0C0C] focus-visible:ring-4 focus-visible:ring-primary-600 focus-visible:ring-offset-4 focus-visible:ring-offset-white [&::-webkit-search-cancel-button]:hidden [&::-webkit-search-decoration]:hidden"
+            className="h-full w-full rounded-[15px] border-0 bg-[#DCEAE4] pl-[66px] pr-5 text-[clamp(19px,2.75vw,22px)] font-bold text-[#171C1A] outline-none placeholder:text-[#53635D] focus-visible:ring-4 focus-visible:ring-[#5E7E72] focus-visible:ring-offset-2 [&::-webkit-search-cancel-button]:hidden [&::-webkit-search-decoration]:hidden"
           />
         </label>
 
@@ -90,67 +146,55 @@ export function CertificationDetailSheet({
 
         <section
           aria-label={`${category.label} 자격증 선택`}
-          className="absolute left-[clamp(24px,6vw,48px)] right-[clamp(24px,6vw,48px)] top-[226px] flex flex-col gap-2.5"
+          className="absolute left-[clamp(20px,4.25vw,34px)] right-[clamp(20px,4.25vw,34px)] top-[202px] h-[454px] overflow-y-auto overflow-x-hidden pb-[68px] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
         >
-          {visibleOptions.map((option, index) => {
-            const selected = option.id === selectedValue
-            const distance = Math.abs(index - visualCenterIndex)
-            const depthClass =
-              distance === 0
-                ? 'mx-0 h-24 px-[26px] text-[clamp(30px,4.5vw,36px)] font-bold leading-[1.4286] opacity-100'
-                : distance === 1
-                  ? 'mx-[clamp(8px,2vw,16px)] h-[70px] px-[23px] text-[clamp(27px,3.75vw,30px)] font-bold leading-[1.74] opacity-[0.58]'
-                  : 'mx-[clamp(16px,4vw,32px)] h-[60px] px-[23px] text-[clamp(24px,3.25vw,26px)] font-extrabold leading-[2] opacity-[0.28]'
+          {popularOptions.length > 0 ? (
+            <div>
+              <h3 className="flex h-9 items-center text-[clamp(18px,2.5vw,20px)] font-bold leading-[normal] text-[#53635D]">
+                많이 선택하는 자격증
+              </h3>
+              <div className="mt-2 grid gap-2">
+                {popularOptions.map(renderOption)}
+              </div>
+            </div>
+          ) : null}
 
-            return (
-              <button
-                key={option.id}
-                type="button"
-                aria-pressed={selected}
-                disabled={atSelectionLimit && !selected}
-                onClick={() => onChange(option.id)}
-                className={`flex min-w-0 items-center rounded-[20px] text-left focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-primary-600 focus-visible:ring-offset-4 focus-visible:ring-offset-white disabled:cursor-not-allowed disabled:opacity-20 ${depthClass} ${
-                  selected
-                    ? 'border-2 border-primary-600 bg-primary-100'
-                    : 'border border-primary-100 bg-white'
-                }`}
-              >
-                <span className="relative h-9 w-9 shrink-0">
-                  <img
-                    src={selected ? selectedRadioIcon : unselectedRadioIcon}
-                    alt=""
-                    aria-hidden="true"
-                    className="h-9 w-9"
-                  />
-                  {selected ? (
-                    <img
-                      src={radioDotIcon}
-                      alt=""
-                      aria-hidden="true"
-                      className="absolute left-1/2 top-1/2 h-[18px] w-[18px] -translate-x-1/2 -translate-y-1/2"
-                    />
-                  ) : null}
-                </span>
-                <span className="ml-6 min-w-0 truncate">{option.label}</span>
-              </button>
-            )
-          })}
+          {otherOptions.length > 0 ? (
+            <div className="mt-4">
+              <h3 className="flex h-9 items-center text-[clamp(18px,2.5vw,20px)] font-bold leading-[normal] text-[#53635D]">
+                다른 자격증
+              </h3>
+              <div className="mt-2 grid gap-2">
+                {otherOptions.map(renderOption)}
+              </div>
+            </div>
+          ) : null}
         </section>
 
-        <div
-          aria-hidden="true"
-          className="pointer-events-none absolute left-[clamp(24px,6vw,48px)] right-[clamp(24px,6vw,48px)] top-[590px] h-[70px] bg-gradient-to-b from-white/0 to-white"
-        />
+        {visibleOptions.length > 3 ? (
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute left-[clamp(20px,4.25vw,34px)] right-[clamp(20px,4.25vw,34px)] top-[588px] h-[68px] bg-gradient-to-b from-white/0 to-white"
+          >
+            <img
+              src={scrollDownIcon}
+              alt=""
+              className="absolute bottom-0 left-1/2 h-7 w-10 -translate-x-1/2"
+            />
+          </div>
+        ) : null}
 
-        <div className="absolute bottom-12 left-[clamp(24px,6vw,48px)] right-[clamp(24px,6vw,48px)]">
+        <div className="absolute bottom-[50px] left-[clamp(20px,4.25vw,34px)] right-[clamp(20px,4.25vw,34px)]">
           <Button
             type="button"
             variant="primary"
-            size="4xl"
+            size="xl"
             onClick={onApply}
-            className="!h-24 !min-h-24 !w-full !rounded-[28px] !border-0 !bg-primary-600 !px-8 !py-0 !text-[clamp(36px,5.5vw,44px)] !leading-[1.3333] !tracking-normal hover:!bg-primary-600"
+            className="!h-[92px] !min-h-[92px] !w-full !rounded-[18px] !border-0 !bg-[linear-gradient(90deg,#486D92_0%,#71B48F_100%)] !px-6 !py-0 !text-[clamp(22px,3.125vw,25px)] !font-bold !leading-[normal] !shadow-[0_8px_16px_rgba(37,50,45,0.16)]"
           >
-            적용
+            {selectedValues.length > 0
+              ? `선택한 자격증 ${selectedValues.length}개 적용`
+              : '적용'}
           </Button>
         </div>
       </div>

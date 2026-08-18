@@ -3,23 +3,31 @@ import { HelpModal } from './components/common/HelpModal'
 import { FlowStatus } from './components/flow/FlowStatus'
 import {
   CERTIFICATION_CATEGORIES,
+  getBarrierLabel,
   getCertificationLabel,
   type CertificationCategoryId,
 } from './data/profileOptions'
+import { EXPERIENCE_CATEGORIES } from './data/experienceOptions'
 import {
   createInitialWorkPreferenceDraft,
+  WORK_PREFERENCE_GROUPS,
   type WorkPreferenceDraft,
   type WorkPreferenceOptionId,
   type WorkPreferenceQuestionId,
 } from './data/workPreferenceOptions'
-import { ApplicationGuidePage } from './pages/ApplicationGuidePage'
+import { AnswerReviewPage } from './pages/AnswerReviewPage'
 import { BarrierSelectionPage } from './pages/BarrierSelectionPage'
 import { CertificationSelectionPage } from './pages/CertificationSelectionPage'
+import { CounselorResultPage } from './pages/CounselorResultPage'
 import { ExperienceSelectionPage } from './pages/ExperienceSelectionPage'
 import { JobCategoryPage } from './pages/JobCategoryPage'
 import { QuestionPage } from './pages/QuestionPage'
-import { ResultPage } from './pages/ResultPage'
+import { ResultIntroPage } from './pages/ResultIntroPage'
 import { StartPage } from './pages/StartPage'
+import {
+  SummaryPreparationPage,
+  type SummaryPreparationStatus,
+} from './pages/SummaryPreparationPage'
 import { TutorialPage } from './pages/TutorialPage'
 import { WorkPreferencePage } from './pages/WorkPreferencePage'
 import { mockQuestionDataSource } from './services/questionDataSource'
@@ -37,7 +45,6 @@ import type {
 } from './types/flow'
 
 const MAX_PROFILE_SELECTIONS = 5
-const MAX_PICKED_JOBS = 3
 
 type ProfileStep =
   | 'experiences'
@@ -46,6 +53,8 @@ type ProfileStep =
   | 'job-interests'
   | 'certifications'
 type BarrierDetailSelections = Record<string, string[]>
+type QuestionStep = 'questions' | 'review'
+type FinalFlowStep = 'summary' | 'intro'
 
 function createInitialProfile(): ProfileDraft {
   return {
@@ -85,13 +94,15 @@ function App() {
     [],
   )
   const [jobCategoryUnknown, setJobCategoryUnknown] = useState(false)
-  const [jobCategoryPage, setJobCategoryPage] = useState(0)
   const [questions, setQuestions] = useState<TraitQuestion[]>([])
   const [loadedProfileKey, setLoadedProfileKey] = useState<string | null>(null)
   const [responses, setResponses] = useState<TraitResponseMap>({})
-  const [revealedQuestionCount, setRevealedQuestionCount] = useState(1)
+  const [questionStep, setQuestionStep] = useState<QuestionStep>('questions')
+  const [finalFlowStep, setFinalFlowStep] =
+    useState<FinalFlowStep>('summary')
+  const [summaryStatus, setSummaryStatus] =
+    useState<SummaryPreparationStatus>('loading')
   const [recommendations, setRecommendations] = useState<Recommendation[]>([])
-  const [pickedJobCodes, setPickedJobCodes] = useState<string[]>([])
   const [transitionState, setTransitionState] =
     useState<FlowTransitionState>({ kind: 'idle' })
   const [showHelpModal, setShowHelpModal] = useState(false)
@@ -126,14 +137,14 @@ function App() {
     setWorkPreferences(createInitialWorkPreferenceDraft())
     setSelectedJobCategories([])
     setJobCategoryUnknown(false)
-    setJobCategoryPage(0)
     setProfileStep('experiences')
     setQuestions([])
     setLoadedProfileKey(null)
     setResponses({})
-    setRevealedQuestionCount(1)
+    setQuestionStep('questions')
+    setFinalFlowStep('summary')
+    setSummaryStatus('loading')
     setRecommendations([])
-    setPickedJobCodes([])
     setTransitionState({ kind: 'idle' })
     setShowHelpModal(false)
     goToPage(destination)
@@ -191,9 +202,8 @@ function App() {
       setQuestions(loadedQuestions)
       setLoadedProfileKey(getProfileKey(profileSnapshot))
       setResponses({})
-      setRevealedQuestionCount(1)
+      setQuestionStep('questions')
       setRecommendations([])
-      setPickedJobCodes([])
       setTransitionState({ kind: 'idle' })
       goToPage('P4')
     } catch (error: unknown) {
@@ -206,34 +216,41 @@ function App() {
     }
   }
 
-  const loadRecommendations = async (responseSnapshot: TraitResponseMap) => {
-    const { controller, requestId } = beginRequest('recommendations')
+  const prepareSummary = async (responseSnapshot: TraitResponseMap) => {
+    requestIdRef.current += 1
+    requestControllerRef.current?.abort()
+
+    const controller = new AbortController()
+    const requestId = requestIdRef.current
+    requestControllerRef.current = controller
+
+    setFinalFlowStep('summary')
+    setSummaryStatus('loading')
+    setRecommendations([])
+    setTransitionState({ kind: 'idle' })
+    goToPage('P5')
 
     try {
-      const loadedRecommendations =
-        await mockRecommendationDataSource.loadRecommendations(
+      const [loadedRecommendations] = await Promise.all([
+        mockRecommendationDataSource.loadRecommendations(
           {
             profile,
             questions,
             responses: responseSnapshot,
           },
           controller.signal,
-        )
+        ),
+        new Promise<void>((resolve) => window.setTimeout(resolve, 1400)),
+      ])
 
       if (!isCurrentRequest(requestId, controller)) return
 
-      if (loadedRecommendations.length === 0) {
-        setTransitionState({ kind: 'empty' })
-        return
-      }
-
       setRecommendations(loadedRecommendations)
-      setPickedJobCodes([])
-      setTransitionState({ kind: 'idle' })
-      goToPage('P5')
+      setFinalFlowStep('intro')
+      window.scrollTo({ top: 0, behavior: 'auto' })
     } catch (error: unknown) {
       if (!isCurrentRequest(requestId, controller) || isAbortError(error)) return
-      setTransitionState({ kind: 'error', target: 'recommendations' })
+      setSummaryStatus('failure')
     } finally {
       if (requestControllerRef.current === controller) {
         requestControllerRef.current = null
@@ -343,7 +360,6 @@ function App() {
     )
     const selectedIds = [...new Set(certificationIds)]
       .filter((id) => allowedOptionIds.has(id))
-      .slice(0, 1)
 
     setProfile((previous) => {
       const outsideIds = previous.certificationIds.filter(
@@ -401,54 +417,14 @@ function App() {
     questionId: string,
     response: TraitResponseCode,
   ) => {
-    const wasComplete = questions.every((question) => responses[question.id])
-    const wasAnswered = Boolean(responses[questionId])
-    const nextResponses = { ...responses, [questionId]: response }
-    const questionIndex = questions.findIndex(
-      (question) => question.id === questionId,
-    )
-
-    setResponses(nextResponses)
-
-    if (
-      !wasAnswered &&
-      questionIndex === revealedQuestionCount - 1 &&
-      revealedQuestionCount < questions.length
-    ) {
-      setRevealedQuestionCount((count) => Math.min(count + 1, questions.length))
-    }
-
-    const isComplete = questions.every(
-      (question) => nextResponses[question.id],
-    )
-    if (!wasComplete && isComplete) {
-      void loadRecommendations(nextResponses)
-    }
+    setResponses((previous) => ({ ...previous, [questionId]: response }))
   }
 
-  const handleTogglePick = (jobCode: string) => {
-    setPickedJobCodes((previous) => {
-      if (previous.includes(jobCode)) {
-        return previous.filter((code) => code !== jobCode)
-      }
-
-      if (previous.length >= MAX_PICKED_JOBS) return previous
-      return [...previous, jobCode]
-    })
-  }
-
-  const handleMovePick = (jobCode: string, direction: 'up' | 'down') => {
-    setPickedJobCodes((previous) => {
-      const index = previous.indexOf(jobCode)
-      const targetIndex = direction === 'up' ? index - 1 : index + 1
-      if (index < 0 || targetIndex < 0 || targetIndex >= previous.length) {
-        return previous
-      }
-
-      const next = [...previous]
-      ;[next[index], next[targetIndex]] = [next[targetIndex], next[index]]
-      return next
-    })
+  const handleQuestionComplete = () => {
+    if (questions.every((question) => responses[question.id])) {
+      setQuestionStep('review')
+      window.scrollTo({ top: 0, behavior: 'auto' })
+    }
   }
 
   const retryTransition = () => {
@@ -457,23 +433,106 @@ function App() {
     if (transitionState.target === 'questions') {
       void loadQuestions()
     } else {
-      void loadRecommendations(responses)
+      void prepareSummary(responses)
     }
   }
-
-  const pickedRecommendations = pickedJobCodes
-    .map((jobCode) =>
-      recommendations.find(
-        (recommendation) => recommendation.jobCode === jobCode,
-      ),
-    )
-    .filter((recommendation): recommendation is Recommendation =>
-      Boolean(recommendation),
-    )
 
   const certificationLabels = profile.certificationIds.map(
     getCertificationLabel,
   )
+  const experienceSummary = profile.experienceNone
+    ? '없음'
+    : profile.experienceCategoryIds.length > 0
+      ? profile.experienceCategoryIds
+          .map(
+            (categoryId) =>
+              EXPERIENCE_CATEGORIES.find(
+                (category) => category.id === categoryId,
+              )?.label ?? categoryId,
+          )
+          .join(' · ')
+      : '선택하지 않음'
+  const barrierSummary = profile.barrierNone
+    ? '특별히 어려운 일은 없어요'
+    : profile.barrierIds.length > 0
+      ? profile.barrierIds.map(getBarrierLabel).join(' · ')
+      : '선택하지 않음'
+  const workPreferenceLabels = WORK_PREFERENCE_GROUPS.flatMap((group) => {
+    const selectedId = workPreferences[group.id]
+    if (!selectedId) return []
+
+    const selectedOption = group.options.find(
+      (option) => option.id === selectedId,
+    )
+    if (!selectedOption) return []
+
+    if (group.id === 'commute') {
+      return [
+        selectedOption.id === 'any'
+          ? '통근 거리 상관없어요'
+          : `통근 ${selectedOption.label}`,
+      ]
+    }
+    if (group.id === 'start-time') {
+      if (selectedOption.id === 'now') return ['바로 시작']
+      if (selectedOption.id === 'any') return ['시작 시기 상관없어요']
+      return [`${selectedOption.label} 시작`]
+    }
+    if (group.id === 'priority') {
+      return [
+        selectedOption.id === 'any'
+          ? '중요 조건 상관없어요'
+          : `${selectedOption.label} 우선`,
+      ]
+    }
+    return [
+      selectedOption.id === 'any'
+        ? '근무 시간 상관없어요'
+        : selectedOption.label,
+    ]
+  })
+  const workPreferenceSummary =
+    workPreferenceLabels.length > 0
+      ? workPreferenceLabels.join(' · ')
+      : '선택하지 않음'
+  const jobInterestSummary = jobCategoryUnknown
+    ? '없음'
+    : selectedJobCategories.length > 0
+      ? selectedJobCategories
+          .map(
+            (categoryId) =>
+              CERTIFICATION_CATEGORIES.find(
+                (category) => category.id === categoryId,
+              )?.label ?? categoryId,
+          )
+          .join(' · ')
+      : '선택하지 않음'
+  const certificationSummaryParts = [
+    ...certificationLabels,
+    ...(profile.certificationOther.trim()
+      ? [profile.certificationOther.trim()]
+      : []),
+  ]
+  const certificationSummary = profile.certificationNone
+    ? '없음'
+    : certificationSummaryParts.length > 0
+      ? certificationSummaryParts.join(' · ')
+      : '선택하지 않음'
+  const counselorMemo = [
+    profile.experienceNone
+      ? '해본 작업은 없다고 답했어요.'
+      : profile.experienceCategoryIds.length > 0
+        ? `${experienceSummary} 경험이 있어요.`
+        : '해본 작업을 선택하지 않았어요.',
+    profile.barrierNone
+      ? '특별히 어려운 일은 없다고 답했어요.'
+      : profile.barrierIds.length > 0
+        ? `${barrierSummary}은 상담에서 확인이 필요해요.`
+        : '피하거나 확인할 조건을 선택하지 않았어요.',
+    workPreferenceLabels.length > 0
+      ? `원하는 근무 방식: ${workPreferenceSummary}`
+      : '원하는 근무 방식을 선택하지 않았어요.',
+  ]
 
   let pageContent
 
@@ -550,8 +609,6 @@ function App() {
               onJobCategoryUnknown={handleJobCategoryUnknown}
               onNext={() => goToProfileStep('certifications')}
               onPrev={() => goToProfileStep('work-preferences')}
-              currentPage={jobCategoryPage}
-              onPageChange={setJobCategoryPage}
               onHelp={() => setShowHelpModal(true)}
             />
           ) : (
@@ -569,39 +626,48 @@ function App() {
           )
         break
       case 'P4':
-        pageContent = (
-          <QuestionPage
-            questions={questions}
-            responses={responses}
-            revealedCount={revealedQuestionCount}
-            showRecommendationAction={recommendations.length > 0}
-            onAnswer={handleQuestionAnswer}
-            onContinue={() => void loadRecommendations(responses)}
-            onPrev={() => goToProfileStep('certifications')}
-            onHelp={() => setShowHelpModal(true)}
-          />
-        )
+        pageContent =
+          questionStep === 'questions' ? (
+            <QuestionPage
+              questions={questions}
+              responses={responses}
+              onAnswer={handleQuestionAnswer}
+              onComplete={handleQuestionComplete}
+              onHelp={() => setShowHelpModal(true)}
+            />
+          ) : (
+            <AnswerReviewPage
+              experienceSummary={experienceSummary}
+              barrierSummary={barrierSummary}
+              workPreferenceSummary={workPreferenceSummary}
+              jobInterestSummary={jobInterestSummary}
+              certificationSummary={certificationSummary}
+              onConfirm={() => void prepareSummary(responses)}
+              onHelp={() => setShowHelpModal(true)}
+            />
+          )
         break
       case 'P5':
-        pageContent = (
-          <ResultPage
-            recommendations={recommendations}
-            pickedJobCodes={pickedJobCodes}
-            onTogglePick={handleTogglePick}
-            onMovePick={handleMovePick}
-            onComplete={() => goToPage('P6')}
-            onPrev={() => goToPage('P4')}
-            onHelp={() => setShowHelpModal(true)}
-          />
-        )
+        pageContent =
+          finalFlowStep === 'summary' ? (
+            <SummaryPreparationPage
+              status={summaryStatus}
+              onRetry={() => void prepareSummary(responses)}
+              onHelp={() => setShowHelpModal(true)}
+            />
+          ) : (
+            <ResultIntroPage
+              onNext={() => goToPage('P6')}
+              onHelp={() => setShowHelpModal(true)}
+            />
+          )
         break
       case 'P6':
         pageContent = (
-          <ApplicationGuidePage
-            pickedRecommendations={pickedRecommendations}
-            certificationLabels={certificationLabels}
-            onPrev={() => goToPage('P5')}
-            onFinish={() => resetSession('P1')}
+          <CounselorResultPage
+            recommendations={recommendations}
+            counselorMemo={counselorMemo}
+            onRestart={() => resetSession('P1')}
             onHelp={() => setShowHelpModal(true)}
           />
         )

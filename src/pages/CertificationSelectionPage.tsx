@@ -1,15 +1,17 @@
 import { useState } from 'react'
-import beautyIcon from '../assets/icons/certifications/beauty.svg'
-import careIcon from '../assets/icons/certifications/care.svg'
-import cookingIcon from '../assets/icons/certifications/cooking.svg'
-import drivingIcon from '../assets/icons/certifications/driving.svg'
-import noneIcon from '../assets/icons/certifications/none.svg'
-import officeIcon from '../assets/icons/certifications/office.svg'
-import otherIcon from '../assets/icons/certifications/other.svg'
-import safetyIcon from '../assets/icons/certifications/safety.svg'
-import technicalIcon from '../assets/icons/certifications/technical.svg'
-import previousStepIcon from '../assets/icons/barriers/previous-step-up.svg'
-import headsetConsultationIcon from '../assets/icons/headset-consultation.svg'
+import beautyIcon from '../assets/icons/certifications-final/beauty.svg'
+import careIcon from '../assets/icons/certifications-final/care.svg'
+import chevronIcon from '../assets/icons/certifications-final/chevron.svg'
+import cookingIcon from '../assets/icons/certifications-final/cooking.svg'
+import drivingIcon from '../assets/icons/certifications-final/driving.svg'
+import nextIcon from '../assets/icons/certifications-final/next.svg'
+import noneIcon from '../assets/icons/certifications-final/none.svg'
+import officeIcon from '../assets/icons/certifications-final/office.svg'
+import otherIcon from '../assets/icons/certifications-final/other.svg'
+import previousIcon from '../assets/icons/certifications-final/previous.svg'
+import safetyIcon from '../assets/icons/certifications-final/safety.svg'
+import staffHeadsetIcon from '../assets/icons/certifications-final/staff-headset.svg'
+import technicalIcon from '../assets/icons/certifications-final/technical.svg'
 import { Button } from '../components/common/Button'
 import { CertificationDetailSheet } from '../components/profile/CertificationDetailSheet'
 import {
@@ -56,9 +58,7 @@ export function CertificationSelectionPage({
 }: CertificationSelectionPageProps) {
   const [activeCategoryId, setActiveCategoryId] =
     useState<CertificationCategoryId | null>(null)
-  const [draftSelectedValue, setDraftSelectedValue] = useState<string | null>(
-    null,
-  )
+  const [draftSelectedIds, setDraftSelectedIds] = useState<string[]>([])
 
   const activeCategory = CERTIFICATION_CATEGORIES.find(
     (category) => category.id === activeCategoryId,
@@ -68,26 +68,31 @@ export function CertificationSelectionPage({
     const category = CERTIFICATION_CATEGORIES.find(
       (candidate) => candidate.id === categoryId,
     )
-    const selectedValue =
-      category?.options.find((option) => selectedIds.includes(option.id))?.id ??
-      null
+    const optionIds = new Set<string>(
+      category?.options.map((option) => option.id) ?? [],
+    )
 
-    setDraftSelectedValue(selectedValue)
+    setDraftSelectedIds(selectedIds.filter((id) => optionIds.has(id)))
     setActiveCategoryId(categoryId)
   }
 
   const closeCategorySheet = () => {
     setActiveCategoryId(null)
-    setDraftSelectedValue(null)
+    setDraftSelectedIds([])
   }
 
   const applyCategorySelection = () => {
     if (!activeCategory) return
-    onApplyCategory(
-      activeCategory.id,
-      draftSelectedValue ? [draftSelectedValue] : [],
-    )
+    onApplyCategory(activeCategory.id, draftSelectedIds)
     closeCategorySheet()
+  }
+
+  const toggleDraftSelection = (optionId: string) => {
+    setDraftSelectedIds((previous) =>
+      previous.includes(optionId)
+        ? previous.filter((id) => id !== optionId)
+        : [...previous, optionId],
+    )
   }
 
   const activeOptionIds = new Set<string>(
@@ -98,136 +103,147 @@ export function CertificationSelectionPage({
     (otherValue.trim() ? 1 : 0)
 
   return (
-    <div className="v6-entry-page relative min-h-[100svh] overflow-x-hidden rounded-[clamp(20px,4vw,32px)] bg-[#FAF8F2] text-[#0D0C0C]">
-      <button
-        type="button"
-        onClick={onPrev}
-        aria-label="이전 단계 · 어려운 일 선택"
-        className="group absolute left-1/2 top-[clamp(96px,15.5vw,124px)] z-20 h-[clamp(154px,21.25vw,170px)] w-[min(608px,calc(100vw-48px))] -translate-x-1/2 border-0 p-0 focus-visible:outline-none"
-      >
-        <span className="absolute inset-x-0 top-0 flex h-[clamp(72px,11vw,88px)] items-center justify-center rounded-[clamp(18px,3vw,24px)] border-[1.5px] border-primary-600 bg-white text-[clamp(24px,5vw,40px)] font-bold leading-none text-primary-600 shadow-[0_4px_12px_rgba(13,12,12,0.05)] backdrop-blur-[8px] group-focus-visible:ring-4 group-focus-visible:ring-primary-600 group-focus-visible:ring-offset-4 group-focus-visible:ring-offset-[#FAF8F2]">
-          이전 단계&nbsp; · &nbsp;어려운 일 선택
-        </span>
-        <span className="absolute left-1/2 top-[clamp(104px,14.25vw,114px)] flex h-[clamp(48px,7vw,56px)] w-[clamp(80px,12vw,96px)] -translate-x-1/2 items-center justify-center rounded-[clamp(16px,2.5vw,20px)] border-[1.5px] border-primary-600 bg-white shadow-[0_4px_12px_rgba(13,12,12,0.07)]">
-          <img
-            src={previousStepIcon}
-            alt=""
-            aria-hidden="true"
-            className="h-[clamp(36px,5.5vw,44px)] w-[clamp(36px,5.5vw,44px)]"
-          />
-        </span>
-      </button>
+    <div className="v6-entry-page relative min-h-[max(100svh,1360px)] overflow-x-hidden rounded-[clamp(20px,3.75vw,30px)] bg-[linear-gradient(102.244deg,#FFFDF9_0%,#EDF4F0_103.09%)] text-[#171C1A] shadow-[0_8px_24px_rgba(37,50,45,0.13)] sm:min-h-[max(100svh,1280px)]">
+      <div className="relative mx-auto min-h-[max(100svh,1360px)] w-full max-w-[800px] sm:min-h-[max(100svh,1280px)]">
+        <header className="absolute inset-x-0 top-0 z-20 h-[clamp(96px,14.5vw,116px)] bg-[rgba(255,255,255,0.72)] shadow-[0_8px_24px_rgba(37,50,45,0.13)] backdrop-blur-[9px]">
+          <div className="absolute left-[clamp(16px,4.75vw,38px)] top-[clamp(14px,2.25vw,18px)] h-[clamp(68px,9.75vw,78px)] w-[clamp(144px,45vw,360px)]">
+            <p className="h-[clamp(26px,4.25vw,34px)] whitespace-pre-wrap text-[clamp(17px,2.75vw,22px)] font-bold leading-[normal] text-[#5E8C7A]">
+              기본 정보  5 / 5
+            </p>
+            <div className="absolute inset-x-0 top-[clamp(43px,6.375vw,51px)] h-[clamp(8px,1.25vw,10px)] overflow-hidden rounded-full bg-[#D9E3E0]">
+              <div className="h-full w-full rounded-full bg-[#5E8C7A]" />
+            </div>
+          </div>
 
-      <header className="fixed inset-x-0 top-0 z-40 h-[clamp(112px,18.5vw,148px)] rounded-t-[clamp(20px,4vw,32px)] rounded-b-[clamp(20px,3.5vw,28px)] border border-[rgba(82,120,111,0.16)] bg-[rgba(250,248,242,0.78)] shadow-[0_6px_18px_rgba(13,12,12,0.08)] backdrop-blur-[12px]">
-        <button
-          type="button"
-          onClick={onHelp}
-          className="absolute right-[clamp(15px,5.875vw,47px)] top-[clamp(15px,2.875vw,23px)] h-[clamp(80px,12.5vw,100px)] w-[min(270px,calc(100vw-32px))] rounded-[clamp(18px,3vw,24px)] border-[1.5px] border-[rgba(82,120,111,0.92)] bg-[rgba(255,255,255,0.82)] text-primary-600 shadow-[0_4px_12px_rgba(13,12,12,0.08)] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-primary-600 focus-visible:ring-offset-4 focus-visible:ring-offset-[#FAF8F2]"
-        >
-          <img
-            src={headsetConsultationIcon}
-            alt=""
-            aria-hidden="true"
-            className="absolute left-[clamp(18px,3vw,24px)] top-[clamp(16px,2.75vw,22px)] h-[clamp(48px,7.5vw,60px)] w-[clamp(52px,8.125vw,65px)]"
-          />
-          <span className="absolute inset-y-0 left-[clamp(82px,12.5vw,100px)] flex w-[clamp(124px,18.25vw,146px)] items-center justify-center whitespace-nowrap text-[clamp(28px,4.5vw,36px)] font-bold leading-none">
-            직원 상담
-          </span>
-        </button>
-      </header>
-
-      <main className="flex min-h-[100svh] flex-col px-[clamp(24px,6vw,48px)] pb-[clamp(48px,11vw,88px)] pt-[clamp(264px,40vw,320px)]">
-        <h1 className="text-center text-[clamp(30px,8vw,64px)] font-extrabold leading-[1.022727]">
-          자격증이 있으신가요?
-        </h1>
-
-        <section
-          aria-label="자격증 종류 선택"
-          className="mt-[clamp(20px,3.0625vw,24.5px)] grid grid-cols-2 gap-4 md:grid-cols-3"
-        >
           <button
             type="button"
-            aria-pressed={noneSelected}
-            onClick={onNone}
-            className={`relative h-[clamp(120px,20.5vw,164px)] rounded-[clamp(18px,3vw,24px)] border-2 border-[#BF473D] bg-[#FDEAE7] text-[#9C241E] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#BF473D] focus-visible:ring-offset-4 focus-visible:ring-offset-[#FAF8F2] ${
-              noneSelected ? 'shadow-[0_0_0_4px_rgba(191,71,61,0.2)]' : ''
-            }`}
+            onClick={onHelp}
+            className="absolute right-[clamp(8px,3.5vw,28px)] top-[clamp(12px,2.5vw,20px)] flex h-[clamp(68px,9.5vw,76px)] w-[clamp(140px,28vw,224px)] items-center justify-center gap-[clamp(7px,1.5vw,12px)] rounded-[clamp(17px,2.375vw,19px)] border-[1.5px] border-[#5D776F] bg-[rgba(255,255,255,0.78)] text-[clamp(17px,3.125vw,25px)] font-bold leading-[normal] text-[#38564E] shadow-[0_8px_12px_rgba(37,50,45,0.14)] backdrop-blur-[9px] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#5E7E72] focus-visible:ring-offset-4 focus-visible:ring-offset-[#FFFDF9]"
           >
-            <span className="absolute inset-x-0 top-2.5 flex h-[58px] items-center justify-center text-[clamp(28px,4.5vw,36px)] font-bold leading-[1.6]">
-              없음
-            </span>
-            <span className="absolute left-1/2 top-[clamp(70px,10.5vw,84px)] flex h-11 w-11 -translate-x-1/2 items-center justify-center">
-              <img src={noneIcon} alt="" aria-hidden="true" />
-            </span>
+            <img
+              src={staffHeadsetIcon}
+              alt=""
+              aria-hidden="true"
+              className="size-[clamp(28px,4.75vw,38px)]"
+            />
+            <span className="whitespace-nowrap">직원 상담</span>
           </button>
+        </header>
 
-          {CERTIFICATION_CATEGORIES.map((category) => {
-            const selected =
-              category.options.some((option) =>
-                selectedIds.includes(option.id),
-              ) ||
-              (category.id === 'other' && otherValue.trim().length > 0)
+        <main>
+          <h1 className="absolute left-[clamp(16px,4.25vw,34px)] right-[clamp(16px,4.25vw,34px)] top-[clamp(132px,18.25vw,146px)] text-[clamp(31px,5vw,40px)] font-extrabold leading-[normal]">
+            자격증이 있으신가요?
+          </h1>
+          <p className="absolute left-[clamp(16px,4.25vw,34px)] right-[clamp(16px,4.25vw,34px)] top-[clamp(184px,25.5vw,204px)] text-[clamp(18px,3vw,24px)] font-bold leading-[normal] text-[#61716B]">
+            종류를 누르면 세부 자격증을 고를 수 있어요.
+          </p>
 
-            return (
-              <button
-                key={category.id}
-                type="button"
-                aria-haspopup="dialog"
-                aria-expanded={activeCategoryId === category.id}
-                aria-pressed={selected}
-                onClick={() => openCategorySheet(category.id)}
-                className={`relative h-[clamp(120px,20.5vw,164px)] min-w-0 rounded-[clamp(18px,3vw,24px)] border-2 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-primary-600 focus-visible:ring-offset-4 focus-visible:ring-offset-[#FAF8F2] ${
-                  selected
-                    ? 'border-primary-600 bg-primary-100'
-                    : 'border-primary-100 bg-white'
-                }`}
-              >
-                <span
-                  className={`absolute inset-x-0 flex items-center justify-center whitespace-nowrap font-extrabold ${
-                    category.id === 'other'
-                      ? 'top-2 h-[60px] text-[clamp(28px,4.5vw,36px)] leading-[1.6667]'
-                      : 'top-3 h-[54px] text-[clamp(22px,4vw,32px)] leading-[1.6667]'
+          <section
+            aria-label="자격증 종류 선택"
+            className="absolute left-[clamp(16px,4vw,32px)] right-[clamp(16px,4vw,32px)] top-[clamp(258px,34.75vw,278px)] grid gap-3"
+          >
+            <button
+              type="button"
+              aria-pressed={noneSelected}
+              onClick={onNone}
+              className={`flex h-[82px] min-w-0 items-center rounded-[18px] border-2 px-[16px] text-left text-[clamp(23px,3.5vw,28px)] font-bold leading-[normal] text-[#B14F3E] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#B14F3E] focus-visible:ring-offset-3 focus-visible:ring-offset-[#FFFDF9] ${
+                noneSelected
+                  ? 'border-[#B14F3E] bg-[#FCEDE9] shadow-[0_0_0_3px_rgba(177,79,62,0.12)]'
+                  : 'border-[#B14F3E] bg-[rgba(252,237,233,0.96)]'
+              }`}
+            >
+              <img
+                src={noneIcon}
+                alt=""
+                aria-hidden="true"
+                className="mr-[22px] size-[60px] shrink-0 object-contain"
+              />
+              <span>없음</span>
+            </button>
+
+            {CERTIFICATION_CATEGORIES.map((category) => {
+              const selected =
+                category.options.some((option) =>
+                  selectedIds.includes(option.id),
+                ) ||
+                (category.id === 'other' && otherValue.trim().length > 0)
+
+              return (
+                <button
+                  key={category.id}
+                  type="button"
+                  aria-haspopup="dialog"
+                  aria-expanded={activeCategoryId === category.id}
+                  aria-pressed={selected}
+                  onClick={() => openCategorySheet(category.id)}
+                  className={`flex h-[82px] min-w-0 items-center rounded-[18px] border-[1.5px] px-[16.5px] text-left text-[clamp(23px,3.5vw,28px)] font-bold leading-[normal] shadow-[0_4px_5px_rgba(41,69,59,0.07)] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#5E7E72] focus-visible:ring-offset-3 focus-visible:ring-offset-[#FFFDF9] ${
+                    selected
+                      ? 'border-[#597A70] bg-[#DCEAE4] text-[#38564E]'
+                      : 'border-[#D1E0D9] bg-[rgba(255,255,255,0.96)] text-[#171C1A]'
                   }`}
                 >
-                  {category.label}
-                </span>
-                <span className="absolute left-1/2 top-[clamp(70px,10.5vw,84px)] flex h-11 w-11 -translate-x-1/2 items-center justify-center">
                   <img
                     src={CATEGORY_ICONS[category.id]}
                     alt=""
                     aria-hidden="true"
-                    className="max-h-10 max-w-[42px]"
+                    className="mr-[22px] size-[60px] shrink-0 object-contain"
                   />
-                </span>
-              </button>
-            )
-          })}
-        </section>
+                  <span className="min-w-0 flex-1 truncate">{category.label}</span>
+                  <img
+                    src={chevronIcon}
+                    alt=""
+                    aria-hidden="true"
+                    className="ml-4 size-[30px] shrink-0"
+                  />
+                </button>
+              )
+            })}
+          </section>
+        </main>
+      </div>
 
-        <div className="min-h-[clamp(64px,20.25vw,162px)] flex-1" />
-
-        <Button
-          type="button"
-          variant="primary"
-          size="4xl"
-          onClick={onNext}
-          className="!h-[clamp(88px,12vw,96px)] !min-h-[clamp(88px,12vw,96px)] !w-full !rounded-[clamp(22px,3.5vw,28px)] !border-0 !px-8 !py-0 !text-[clamp(36px,6vw,48px)] !leading-[1.3333] !tracking-normal"
-        >
-          다음
-        </Button>
-      </main>
+      <footer className="fixed bottom-0 left-1/2 z-30 h-[clamp(108px,15.5vw,124px)] w-full max-w-[800px] -translate-x-1/2 bg-[rgba(255,255,255,0.78)] px-[clamp(16px,3vw,24px)] py-[clamp(14px,2.75vw,22px)] shadow-[0_-5px_18px_rgba(37,50,45,0.10)] backdrop-blur-[9px]">
+        <div className="grid h-full w-full grid-cols-[minmax(0,0.759615fr)_minmax(0,1fr)] gap-[clamp(12px,2.5vw,20px)]">
+          <Button
+            type="button"
+            variant="outline"
+            size="xl"
+            onClick={onPrev}
+            className="!h-full !min-h-0 !rounded-[clamp(16px,2.25vw,18px)] !border-[1.5px] !border-[#CED8D3] !bg-[rgba(255,255,255,0.88)] !px-0 !py-0 !text-[clamp(23px,3.375vw,27px)] !font-bold !leading-[normal] !text-[#171C1A] !shadow-[0_8px_12px_rgba(37,50,45,0.14)]"
+          >
+            <img
+              src={previousIcon}
+              alt=""
+              aria-hidden="true"
+              className="mr-[clamp(8px,1.5vw,12px)] size-[clamp(30px,4.5vw,36px)]"
+            />
+            이전
+          </Button>
+          <Button
+            type="button"
+            variant="primary"
+            size="xl"
+            onClick={onNext}
+            className="!h-full !min-h-0 !rounded-[clamp(16px,2.25vw,18px)] !border-0 !bg-[linear-gradient(90deg,#486D92_0%,#71B48F_100%)] !px-0 !py-0 !text-[clamp(23px,3.375vw,27px)] !font-bold !leading-[normal] !shadow-[0_8px_12px_rgba(37,50,45,0.14)]"
+          >
+            다음
+            <img
+              src={nextIcon}
+              alt=""
+              aria-hidden="true"
+              className="ml-[clamp(8px,1.5vw,12px)] size-[clamp(30px,4.5vw,36px)]"
+            />
+          </Button>
+        </div>
+      </footer>
 
       {activeCategory ? (
         <CertificationDetailSheet
           category={activeCategory}
-          selectedValue={draftSelectedValue}
+          selectedValues={draftSelectedIds}
           outsideSelectionCount={outsideSelectionCount}
           selectionLimit={selectionLimit}
-          onChange={(optionId) =>
-            setDraftSelectedValue((previous) =>
-              previous === optionId ? null : optionId,
-            )
-          }
+          onToggle={toggleDraftSelection}
           onApply={applyCategorySelection}
           onClose={closeCategorySheet}
         />
