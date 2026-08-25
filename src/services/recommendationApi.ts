@@ -10,7 +10,22 @@ function isQuestionKey(value: unknown): value is VoiceQuestionKey {
   return value === 'C' || value === 'D' || value === 'E' || value === 'F' || value === 'G'
 }
 
-function parseJob(value: unknown, index: number): VoiceRecommendationApiJob {
+function isInteger(value: unknown): value is number {
+  return typeof value === 'number' && Number.isInteger(value)
+}
+
+function isNonEmptyString(value: unknown): value is string {
+  return typeof value === 'string' && value.trim().length > 0
+}
+
+function isNullableString(value: unknown): value is string | null {
+  return value === null || typeof value === 'string'
+}
+
+export function parseRecommendationJob(
+  value: unknown,
+  index: number,
+): VoiceRecommendationApiJob {
   if (!isRecord(value)) {
     throw new ApiRequestError(
       'INVALID_RESPONSE',
@@ -19,23 +34,35 @@ function parseJob(value: unknown, index: number): VoiceRecommendationApiJob {
   }
 
   const {
-    job_code,
-    job_name,
-    job_name_easy,
-    one_liner,
+    id,
+    name,
+    easyName,
+    description,
+    categoryId,
+    categoryName,
+    subCategoryName,
+    detailCategoryName,
+    requiresCert,
+    certNote,
+    isRecommendable,
     reason,
-    matched_keywords,
+    matchedKeywords,
   } = value
 
   if (
-    typeof job_code !== 'string' ||
-    !job_code.trim() ||
-    typeof job_name !== 'string' ||
-    !job_name.trim() ||
-    typeof job_name_easy !== 'string' ||
-    typeof one_liner !== 'string' ||
+    !isInteger(id) ||
+    !isNonEmptyString(name) ||
+    !isNullableString(easyName) ||
+    !isNullableString(description) ||
+    !isInteger(categoryId) ||
+    !isNonEmptyString(categoryName) ||
+    !isNullableString(subCategoryName) ||
+    !isNullableString(detailCategoryName) ||
+    typeof requiresCert !== 'boolean' ||
+    !isNullableString(certNote) ||
+    typeof isRecommendable !== 'boolean' ||
     typeof reason !== 'string' ||
-    !Array.isArray(matched_keywords)
+    !Array.isArray(matchedKeywords)
   ) {
     throw new ApiRequestError(
       'INVALID_RESPONSE',
@@ -45,18 +72,25 @@ function parseJob(value: unknown, index: number): VoiceRecommendationApiJob {
   }
 
   return {
-    job_code,
-    job_name,
-    job_name_easy,
-    one_liner,
+    id,
+    name,
+    easyName,
+    description,
+    categoryId,
+    categoryName,
+    subCategoryName,
+    detailCategoryName,
+    requiresCert,
+    certNote,
+    isRecommendable,
     reason,
-    matched_keywords: matched_keywords.filter(
+    matchedKeywords: matchedKeywords.filter(
       (keyword): keyword is string => typeof keyword === 'string',
     ),
   }
 }
 
-function parseRecommendationResponse(
+export function parseRecommendationResponse(
   payload: unknown,
 ): VoiceRecommendationApiResponse {
   if (!isRecord(payload)) {
@@ -66,12 +100,13 @@ function parseRecommendationResponse(
     )
   }
 
-  const { session_id, based_on_questions, generated_at, jobs } = payload
+  const { sessionId, basedOnQuestions, generatedAt, jobs } = payload
   if (
-    typeof session_id !== 'string' ||
-    !Array.isArray(based_on_questions) ||
-    !based_on_questions.every(isQuestionKey) ||
-    typeof generated_at !== 'string' ||
+    typeof sessionId !== 'string' ||
+    !sessionId.trim() ||
+    !Array.isArray(basedOnQuestions) ||
+    !basedOnQuestions.every(isQuestionKey) ||
+    typeof generatedAt !== 'string' ||
     !Array.isArray(jobs)
   ) {
     throw new ApiRequestError(
@@ -82,22 +117,22 @@ function parseRecommendationResponse(
   }
 
   return {
-    session_id,
-    based_on_questions,
-    generated_at,
-    jobs: jobs.slice(0, 5).map(parseJob),
+    sessionId,
+    basedOnQuestions,
+    generatedAt,
+    jobs: jobs.slice(0, 5).map(parseRecommendationJob),
   }
 }
 
-function toVoiceJob(job: VoiceRecommendationApiJob): VoiceJob {
+export function toVoiceJob(job: VoiceRecommendationApiJob): VoiceJob {
   return {
-    id: job.job_code,
-    name: job.job_name_easy.trim() || job.job_name,
-    jobCode: job.job_code,
-    formalName: job.job_name,
-    oneLiner: job.one_liner,
+    id: String(job.id),
+    name: job.easyName?.trim() || job.name,
+    jobCode: String(job.id),
+    formalName: job.name,
+    oneLiner: job.description ?? '',
     reason: job.reason,
-    matchedKeywords: [...job.matched_keywords],
+    matchedKeywords: [...job.matchedKeywords],
   }
 }
 
@@ -113,10 +148,10 @@ export async function fetchVoiceRecommendations(
   )
   const response = parseRecommendationResponse(payload)
 
-  if (response.session_id !== sessionId) {
+  if (response.sessionId !== sessionId) {
     throw new ApiRequestError(
       'INVALID_RESPONSE',
-      '추천 응답의 session_id가 요청과 다릅니다.',
+      '추천 응답의 sessionId가 요청과 다릅니다.',
       { details: payload },
     )
   }

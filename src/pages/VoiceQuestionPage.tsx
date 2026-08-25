@@ -200,9 +200,9 @@ export function VoiceQuestionPage({
         format: 'webm',
         codec: 'opus',
         encoding: 'base64',
-        duration_ms: durationMs,
+        durationMs,
         data,
-        ...(sampleRate ? { sample_rate: sampleRate } : {}),
+        ...(sampleRate ? { sampleRate } : {}),
       }
       const response = await submitVoiceAnswer(
         recordedSessionId,
@@ -212,16 +212,16 @@ export function VoiceQuestionPage({
       )
 
       if (generation !== requestGenerationRef.current) return
-      if (response.status !== 'ok' || !response.stt_text) {
+      if (response.status !== 'ok' || !response.sttText) {
         setStatus('error')
         return
       }
 
       onAnswerChange(recordedQuestionId, {
-        sttText: response.stt_text,
+        sttText: response.sttText,
         keywords: response.keywords ?? [],
         confidence: response.confidence,
-        answeredAt: response.answered_at,
+        answeredAt: response.answeredAt,
       })
       setStatus('success')
     } catch (error: unknown) {

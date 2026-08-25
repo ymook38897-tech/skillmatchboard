@@ -82,8 +82,8 @@ export function App() {
     const request = (async () => {
       try {
         const session = await createVoiceSession()
-        setSessionId(session.session_id)
-        return session.session_id
+        setSessionId(session.sessionId)
+        return session.sessionId
       } finally {
         sessionCreationRef.current = null
       }

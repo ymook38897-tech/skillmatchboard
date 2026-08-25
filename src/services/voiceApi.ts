@@ -27,10 +27,8 @@ function isVoiceQuestionKey(value: unknown): value is VoiceQuestionKey {
   return value === 'C' || value === 'D' || value === 'E' || value === 'F' || value === 'G'
 }
 
-function parseVoiceAnswerResponse(
+export function parseVoiceAnswerResponse(
   payload: unknown,
-  expectedSessionId: string,
-  expectedQuestionKey: VoiceQuestionKey,
 ): VoiceAnswerApiResponse {
   if (!isRecord(payload)) {
     throw new ApiRequestError(
@@ -40,16 +38,21 @@ function parseVoiceAnswerResponse(
   }
 
   const {
-    session_id,
-    question_key,
+    sessionId,
+    questionKey,
     status,
-    stt_text,
+    sttText,
     keywords,
     confidence,
-    answered_at,
+    answeredAt,
   } = payload
 
-  if (status !== 'ok' && status !== 'low_confidence') {
+  if (
+    typeof sessionId !== 'string' ||
+    !sessionId.trim() ||
+    !isVoiceQuestionKey(questionKey) ||
+    (status !== 'ok' && status !== 'low_confidence')
+  ) {
     throw new ApiRequestError(
       'INVALID_RESPONSE',
       '음성 답변 응답의 필수 필드가 올바르지 않습니다.',
@@ -57,7 +60,7 @@ function parseVoiceAnswerResponse(
     )
   }
 
-  if (status === 'ok' && (typeof stt_text !== 'string' || !stt_text.trim())) {
+  if (status === 'ok' && (typeof sttText !== 'string' || !sttText.trim())) {
     throw new ApiRequestError(
       'INVALID_RESPONSE',
       '정상 음성 답변에 인식 문장이 없습니다.',
@@ -74,18 +77,25 @@ function parseVoiceAnswerResponse(
   }
 
   return {
-    session_id:
-      typeof session_id === 'string' ? session_id : expectedSessionId,
-    question_key: isVoiceQuestionKey(question_key)
-      ? question_key
-      : expectedQuestionKey,
+    sessionId,
+    questionKey,
     status,
-    stt_text: typeof stt_text === 'string' ? stt_text : undefined,
+    sttText: typeof sttText === 'string' ? sttText : undefined,
     keywords: Array.isArray(keywords)
       ? keywords.filter((keyword): keyword is string => typeof keyword === 'string')
       : [],
     confidence: typeof confidence === 'number' ? confidence : undefined,
-    answered_at: typeof answered_at === 'string' ? answered_at : undefined,
+    answeredAt: typeof answeredAt === 'string' ? answeredAt : undefined,
+  }
+}
+
+export function createVoiceAnswerRequest(
+  questionId: VoiceQuestionId,
+  audio: VoiceAudioApiPayload,
+): VoiceAnswerApiRequest {
+  return {
+    questionKey: QUESTION_KEY_MAP[questionId],
+    audio,
   }
 }
 
@@ -95,34 +105,27 @@ export async function submitVoiceAnswer(
   audio: VoiceAudioApiPayload,
   signal?: AbortSignal,
 ): Promise<VoiceAnswerApiResponse> {
-  const request: VoiceAnswerApiRequest = {
-    question_key: QUESTION_KEY_MAP[questionId],
-    audio,
-  }
+  const request = createVoiceAnswerRequest(questionId, audio)
   const payload = await postJson(
     `/api/sessions/${encodeURIComponent(sessionId)}/voice-answers`,
     request,
     signal,
     90_000,
   )
-  const response = parseVoiceAnswerResponse(
-    payload,
-    sessionId,
-    request.question_key,
-  )
+  const response = parseVoiceAnswerResponse(payload)
 
-  if (response.session_id !== sessionId) {
+  if (response.sessionId !== sessionId) {
     throw new ApiRequestError(
       'INVALID_RESPONSE',
-      '음성 답변의 session_id가 요청과 다릅니다.',
+      '음성 답변의 sessionId가 요청과 다릅니다.',
       { details: payload },
     )
   }
 
-  if (response.question_key !== request.question_key) {
+  if (response.questionKey !== request.questionKey) {
     throw new ApiRequestError(
       'INVALID_RESPONSE',
-      '음성 답변의 question_key가 요청과 다릅니다.',
+      '음성 답변의 questionKey가 요청과 다릅니다.',
       { details: payload },
     )
   }

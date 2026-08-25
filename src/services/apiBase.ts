@@ -36,14 +36,17 @@ export function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value)
 }
 
-function readErrorCode(payload: unknown): string | undefined {
+export function readApiErrorCode(payload: unknown): string | undefined {
   if (!isRecord(payload)) return undefined
-  if (typeof payload.error_code === 'string') return payload.error_code
 
   const detail = payload.detail
-  if (isRecord(detail) && typeof detail.error_code === 'string') {
-    return detail.error_code
+  if (isRecord(detail)) {
+    if (typeof detail.errorCode === 'string') return detail.errorCode
+    if (typeof detail.error_code === 'string') return detail.error_code
   }
+
+  if (typeof payload.errorCode === 'string') return payload.errorCode
+  if (typeof payload.error_code === 'string') return payload.error_code
 
   const nestedError = payload.error
   if (isRecord(nestedError) && typeof nestedError.code === 'string') {
@@ -134,7 +137,7 @@ export async function postJson(
         `API가 HTTP ${response.status}로 응답했습니다.`,
         {
           status: response.status,
-          errorCode: readErrorCode(payload),
+          errorCode: readApiErrorCode(payload),
           details: payload,
         },
       )

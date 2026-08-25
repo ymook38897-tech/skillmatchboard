@@ -5,7 +5,7 @@ function isFiniteNumber(value: unknown): value is number {
   return typeof value === 'number' && Number.isFinite(value)
 }
 
-function parseSessionResponse(payload: unknown): SessionApiResponse {
+export function parseSessionResponse(payload: unknown): SessionApiResponse {
   if (!isRecord(payload)) {
     throw new ApiRequestError(
       'INVALID_RESPONSE',
@@ -14,20 +14,20 @@ function parseSessionResponse(payload: unknown): SessionApiResponse {
   }
 
   const {
-    session_id,
-    created_at,
-    expires_at,
-    idle_timeout_seconds,
-    max_ttl_seconds,
+    sessionId,
+    createdAt,
+    expiresAt,
+    idleTimeoutSeconds,
+    maxTtlSeconds,
   } = payload
 
   if (
-    typeof session_id !== 'string' ||
-    !session_id.trim() ||
-    typeof created_at !== 'string' ||
-    typeof expires_at !== 'string' ||
-    !isFiniteNumber(idle_timeout_seconds) ||
-    !isFiniteNumber(max_ttl_seconds)
+    typeof sessionId !== 'string' ||
+    !sessionId.trim() ||
+    typeof createdAt !== 'string' ||
+    typeof expiresAt !== 'string' ||
+    !isFiniteNumber(idleTimeoutSeconds) ||
+    !isFiniteNumber(maxTtlSeconds)
   ) {
     throw new ApiRequestError(
       'INVALID_RESPONSE',
@@ -37,11 +37,11 @@ function parseSessionResponse(payload: unknown): SessionApiResponse {
   }
 
   return {
-    session_id,
-    created_at,
-    expires_at,
-    idle_timeout_seconds,
-    max_ttl_seconds,
+    sessionId,
+    createdAt,
+    expiresAt,
+    idleTimeoutSeconds,
+    maxTtlSeconds,
   }
 }
 
