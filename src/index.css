@@ -97,6 +97,15 @@
       sans-serif;
   }
 
+  .voice-flow-page {
+    font-family:
+      "Pretendard",
+      "Apple SD Gothic Neo",
+      "Malgun Gothic",
+      sans-serif;
+    color: #111827;
+  }
+
   html {
     scroll-behavior: smooth;
   }

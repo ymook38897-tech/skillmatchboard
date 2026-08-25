@@ -72,3 +72,40 @@ export type FlowTransitionState =
   | { kind: 'loading'; target: TransitionTarget }
   | { kind: 'error'; target: TransitionTarget }
   | { kind: 'empty' }
+
+// Voice Interview Flow Types
+export type VoiceQuestionId =
+  | 'difficulty'
+  | 'experience'
+  | 'interest'
+  | 'strength'
+  | 'certificate'
+
+export type VoiceQuestionStatus = 'idle' | 'recording' | 'success' | 'error'
+
+export interface VoiceQuestion {
+  id: VoiceQuestionId
+  title: string
+  order: number
+}
+
+export interface VoiceInterviewAnswers {
+  difficulty: string
+  experience: string
+  interest: string
+  strength: string
+  certificate: string
+}
+
+export interface VoiceJob {
+  id: number
+  name: string
+}
+
+export type VoiceFlowStep =
+  | 'start'
+  | 'tutorial'
+  | 'voice-question'
+  | 'answer-review'
+  | 'job-recommendation'
+  | 'resume'
