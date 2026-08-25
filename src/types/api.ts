@@ -43,3 +43,53 @@ export interface NormalizedJob {
   certificationNote: string | null
   sourceSchema: JobApiSchema
 }
+
+export interface SessionApiResponse {
+  session_id: string
+  created_at: string
+  expires_at: string
+  idle_timeout_seconds: number
+  max_ttl_seconds: number
+}
+
+export type VoiceQuestionKey = 'C' | 'D' | 'E' | 'F' | 'G'
+
+export interface VoiceAudioApiPayload {
+  format: 'webm'
+  codec: 'opus'
+  encoding: 'base64'
+  sample_rate?: number
+  duration_ms: number
+  data: string
+}
+
+export interface VoiceAnswerApiRequest {
+  question_key: VoiceQuestionKey
+  audio: VoiceAudioApiPayload
+}
+
+export interface VoiceAnswerApiResponse {
+  session_id: string
+  question_key: VoiceQuestionKey
+  status: 'ok' | 'low_confidence'
+  stt_text?: string
+  keywords?: string[]
+  confidence?: number
+  answered_at?: string
+}
+
+export interface VoiceRecommendationApiJob {
+  job_code: string
+  job_name: string
+  job_name_easy: string
+  one_liner: string
+  reason: string
+  matched_keywords: string[]
+}
+
+export interface VoiceRecommendationApiResponse {
+  session_id: string
+  based_on_questions: VoiceQuestionKey[]
+  generated_at: string
+  jobs: VoiceRecommendationApiJob[]
+}

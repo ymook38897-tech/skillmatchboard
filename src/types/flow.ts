@@ -97,9 +97,25 @@ export interface VoiceInterviewAnswers {
   certificate: string
 }
 
+export interface VoiceAnswerData {
+  sttText: string
+  keywords: string[]
+  confidence?: number
+  answeredAt?: string
+}
+
+export type VoiceInterviewAnswerDetails = Partial<
+  Record<VoiceQuestionId, VoiceAnswerData>
+>
+
 export interface VoiceJob {
-  id: number
+  id: string
   name: string
+  jobCode: string
+  formalName: string
+  oneLiner: string
+  reason: string
+  matchedKeywords: string[]
 }
 
 export type VoiceFlowStep =

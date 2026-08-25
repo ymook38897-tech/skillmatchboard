@@ -1,19 +1,24 @@
 ﻿import { useState } from 'react'
 import type { VoiceJob } from '../types/flow'
-import { MOCK_RECOMMENDED_JOBS } from '../data/voiceJobs'
 
 interface JobRecommendationPageProps {
+  jobs: VoiceJob[]
+  initialSelectedJobs: VoiceJob[]
   onSelectJobs: (selectedJobs: VoiceJob[]) => void
   onPrev: () => void
 }
 
 export function JobRecommendationPage({
+  jobs,
+  initialSelectedJobs,
   onSelectJobs,
 }: JobRecommendationPageProps) {
-  const [selectedIds, setSelectedIds] = useState<number[]>([])
+  const [selectedIds, setSelectedIds] = useState<string[]>(() =>
+    initialSelectedJobs.map((job) => job.id),
+  )
   const MAX_SELECTION = 3
 
-  const toggleJobSelection = (jobId: number) => {
+  const toggleJobSelection = (jobId: string) => {
     setSelectedIds((prev) => {
       if (prev.includes(jobId)) {
         return prev.filter((id) => id !== jobId)
@@ -26,7 +31,7 @@ export function JobRecommendationPage({
   }
 
   const handleNext = () => {
-    const selected = MOCK_RECOMMENDED_JOBS.filter((job) =>
+    const selected = jobs.filter((job) =>
       selectedIds.includes(job.id)
     )
     onSelectJobs(selected)
@@ -45,7 +50,7 @@ export function JobRecommendationPage({
         </header>
 
         <section className="mt-[clamp(24px,2.5svh,32px)] space-y-3">
-          {MOCK_RECOMMENDED_JOBS.map((job, index) => {
+          {jobs.map((job, index) => {
             const isSelected = selectedIds.includes(job.id)
 
             return (

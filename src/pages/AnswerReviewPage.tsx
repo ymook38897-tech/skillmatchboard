@@ -5,12 +5,14 @@ interface AnswerReviewPageProps {
   onEdit: (questionId: VoiceQuestionId) => void
   onNext: () => void
   onPrev: () => void
+  isSubmitting?: boolean
 }
 
 export function AnswerReviewPage({
   answers,
   onEdit,
   onNext,
+  isSubmitting = false,
 }: AnswerReviewPageProps) {
   const reviewItems: { id: VoiceQuestionId; label: string }[] = [
     { id: 'difficulty', label: '어려운 일' },
@@ -57,7 +59,9 @@ export function AnswerReviewPage({
           <button
             type="button"
             onClick={onNext}
-            className="h-[clamp(68px,7.5svh,96px)] w-full rounded-[8px] bg-[#2468F2] text-[clamp(22px,3.5vw,28px)] font-extrabold text-white focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#93B4FF]"
+            disabled={isSubmitting}
+            aria-busy={isSubmitting}
+            className="h-[clamp(68px,7.5svh,96px)] w-full rounded-[8px] bg-[#2468F2] text-[clamp(22px,3.5vw,28px)] font-extrabold text-white focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#93B4FF] disabled:cursor-wait"
           >
             직무 찾기
           </button>

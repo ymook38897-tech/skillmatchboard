@@ -1,6 +1,15 @@
 ﻿import { useState } from 'react'
-import type { VoiceQuestionId, VoiceInterviewAnswers, VoiceJob, VoiceFlowStep } from './types/flow'
-import { VOICE_QUESTIONS, MOCK_ANSWERS } from './data/voiceQuestions'
+import { useRef } from 'react'
+import type {
+  VoiceAnswerData,
+  VoiceFlowStep,
+  VoiceInterviewAnswerDetails,
+  VoiceInterviewAnswers,
+  VoiceJob,
+  VoiceQuestionId,
+} from './types/flow'
+import type { VoiceQuestionKey } from './types/api'
+import { VOICE_QUESTIONS } from './data/voiceQuestions'
 import { StartPage } from './pages/StartPage'
 import { TutorialPage } from './pages/TutorialPage'
 import { VoiceQuestionPage } from './pages/VoiceQuestionPage'
@@ -8,6 +17,10 @@ import { AnswerReviewPage } from './pages/AnswerReviewPage'
 import { JobRecommendationPage } from './pages/JobRecommendationPage'
 import { ResumeGenerationPage } from './pages/ResumeGenerationPage'
 import { HelpModal } from './components/common/HelpModal'
+import { ApiRequestError } from './services/apiBase'
+import { fetchVoiceRecommendations } from './services/recommendationApi'
+import { createVoiceSession } from './services/sessionApi'
+import { QUESTION_ID_MAP } from './services/voiceApi'
 
 function createInitialAnswers(): VoiceInterviewAnswers {
   return {
@@ -24,10 +37,18 @@ export function App() {
   const [answers, setAnswers] = useState<VoiceInterviewAnswers>(
     createInitialAnswers()
   )
+  const [answerDetails, setAnswerDetails] =
+    useState<VoiceInterviewAnswerDetails>({})
+  const [sessionId, setSessionId] = useState<string | null>(null)
+  const [recommendations, setRecommendations] = useState<VoiceJob[]>([])
   const [selectedJobs, setSelectedJobs] = useState<VoiceJob[]>([])
   const [currentQuestionOrder, setCurrentQuestionOrder] = useState(1)
   const [editingQuestionId, setEditingQuestionId] = useState<VoiceQuestionId | null>(null)
   const [showHelpModal, setShowHelpModal] = useState(false)
+  const [isRecommendationLoading, setIsRecommendationLoading] = useState(false)
+  const sessionCreationRef = useRef<Promise<string> | null>(null)
+  const sessionRecoveryRef = useRef<Promise<void> | null>(null)
+  const recommendationAbortRef = useRef<AbortController | null>(null)
 
   const currentQuestion = VOICE_QUESTIONS.find((q) => q.order === currentQuestionOrder)
   const totalQuestions = VOICE_QUESTIONS.length
@@ -41,20 +62,53 @@ export function App() {
     setCurrentQuestionOrder(Math.max(1, Math.min(totalQuestions, order)))
   }
 
-  const handleAnswerChange = (questionId: VoiceQuestionId, answer: string) => {
+  const handleAnswerChange = (
+    questionId: VoiceQuestionId,
+    answer: VoiceAnswerData,
+  ) => {
     setAnswers((prev) => ({
+      ...prev,
+      [questionId]: answer.sttText,
+    }))
+    setAnswerDetails((prev) => ({
       ...prev,
       [questionId]: answer,
     }))
+  }
+
+  const createFreshSession = (): Promise<string> => {
+    if (sessionCreationRef.current) return sessionCreationRef.current
+
+    const request = (async () => {
+      try {
+        const session = await createVoiceSession()
+        setSessionId(session.session_id)
+        return session.session_id
+      } finally {
+        sessionCreationRef.current = null
+      }
+    })()
+
+    sessionCreationRef.current = request
+    return request
+  }
+
+  const ensureSession = (): Promise<string> => {
+    return sessionId ? Promise.resolve(sessionId) : createFreshSession()
   }
 
   const handleStartTutorial = () => {
     goToStep('tutorial')
   }
 
-  const handleTutorialNext = () => {
-    goToStep('voice-question')
-    goToQuestionOrder(1)
+  const handleTutorialNext = async () => {
+    try {
+      await ensureSession()
+      goToQuestionOrder(1)
+      goToStep('voice-question')
+    } catch (error: unknown) {
+      console.error('[Session API] 세션 생성 실패', error)
+    }
   }
 
   const handleTutorialPrev = () => {
@@ -84,8 +138,125 @@ export function App() {
     }
   }
 
-  const handleAnswerReviewNext = () => {
-    goToStep('job-recommendation')
+  const resetVoiceSessionData = () => {
+    recommendationAbortRef.current?.abort()
+    recommendationAbortRef.current = null
+    setSessionId(null)
+    setAnswers(createInitialAnswers())
+    setAnswerDetails({})
+    setRecommendations([])
+    setSelectedJobs([])
+    setCurrentQuestionOrder(1)
+    setEditingQuestionId(null)
+  }
+
+  const handleSessionNotFound = (): Promise<void> => {
+    if (sessionRecoveryRef.current) return sessionRecoveryRef.current
+
+    resetVoiceSessionData()
+    goToStep('tutorial')
+
+    const recovery = (async () => {
+      try {
+        await createFreshSession()
+        goToQuestionOrder(1)
+        goToStep('voice-question')
+      } catch (error: unknown) {
+        console.error('[Session API] 만료 세션 재생성 실패', error)
+      } finally {
+        sessionRecoveryRef.current = null
+      }
+    })()
+
+    sessionRecoveryRef.current = recovery
+    return recovery
+  }
+
+  const getFirstMissingQuestionId = (
+    error: ApiRequestError,
+  ): VoiceQuestionId | null => {
+    if (!error.details || typeof error.details !== 'object') return null
+    const details = error.details as {
+      missing?: unknown
+      detail?: { missing?: unknown }
+    }
+    const missing = details.missing ?? details.detail?.missing
+    if (!Array.isArray(missing)) return null
+
+    const missingKey = missing.find(
+      (value): value is VoiceQuestionKey =>
+        value === 'C' ||
+        value === 'D' ||
+        value === 'E' ||
+        value === 'F' ||
+        value === 'G',
+    )
+    return missingKey ? QUESTION_ID_MAP[missingKey] : null
+  }
+
+  const handleAnswerReviewNext = async () => {
+    if (isRecommendationLoading || recommendationAbortRef.current) return
+
+    let activeSessionId: string
+    try {
+      activeSessionId = await ensureSession()
+    } catch (error: unknown) {
+      console.error('[Session API] 추천 전 세션 준비 실패', error)
+      return
+    }
+
+    const controller = new AbortController()
+    recommendationAbortRef.current = controller
+    setIsRecommendationLoading(true)
+
+    try {
+      const jobs = await fetchVoiceRecommendations(
+        activeSessionId,
+        controller.signal,
+      )
+      setRecommendations(jobs)
+      setSelectedJobs([])
+      goToStep('job-recommendation')
+    } catch (error: unknown) {
+      if (error instanceof ApiRequestError && error.kind === 'ABORTED') return
+
+      if (
+        error instanceof ApiRequestError &&
+        error.status === 404 &&
+        error.errorCode === 'SESSION_NOT_FOUND'
+      ) {
+        await handleSessionNotFound()
+        return
+      }
+
+      if (
+        error instanceof ApiRequestError &&
+        error.status === 409 &&
+        error.errorCode === 'INCOMPLETE_ANSWERS'
+      ) {
+        const missingQuestionId = getFirstMissingQuestionId(error)
+        console.error('[Recommendation API] 답변 누락', error.details)
+
+        if (missingQuestionId) {
+          const question = VOICE_QUESTIONS.find(
+            (item) => item.id === missingQuestionId,
+          )
+          if (question) {
+            setCurrentQuestionOrder(question.order)
+            setEditingQuestionId(missingQuestionId)
+            goToStep('voice-question')
+          }
+        }
+        return
+      }
+
+      console.error('[Recommendation API] 추천 요청 실패', error)
+    } finally {
+      if (recommendationAbortRef.current === controller) {
+        recommendationAbortRef.current = null
+      }
+      setIsRecommendationLoading(false)
+    }
   }
 
   const handleAnswerReviewPrev = () => {
@@ -109,7 +280,12 @@ export function App() {
   const handleResumeComplete = () => {
     // Flow complete - can navigate to next screen or show completion
     goToStep('start')
+    recommendationAbortRef.current?.abort()
+    recommendationAbortRef.current = null
+    setSessionId(null)
     setAnswers(createInitialAnswers())
+    setAnswerDetails({})
+    setRecommendations([])
     setSelectedJobs([])
     setCurrentQuestionOrder(1)
     setEditingQuestionId(null)
@@ -134,9 +310,12 @@ export function App() {
 
       {currentStep === 'voice-question' && currentQuestion && (
         <VoiceQuestionPage
+          key={`${sessionId ?? 'no-session'}-${currentQuestion.id}`}
+          sessionId={sessionId}
           questionId={currentQuestion.id as VoiceQuestionId}
           answers={answers}
           onAnswerChange={handleAnswerChange}
+          onSessionNotFound={handleSessionNotFound}
           onNext={
             editingQuestionId
               ? () => {
@@ -165,11 +344,14 @@ export function App() {
           onEdit={handleEditAnswer}
           onNext={handleAnswerReviewNext}
           onPrev={handleAnswerReviewPrev}
+          isSubmitting={isRecommendationLoading}
         />
       )}
 
       {currentStep === 'job-recommendation' && (
         <JobRecommendationPage
+          jobs={recommendations}
+          initialSelectedJobs={selectedJobs}
           onSelectJobs={handleJobSelectionNext}
           onPrev={handleJobSelectionPrev}
         />

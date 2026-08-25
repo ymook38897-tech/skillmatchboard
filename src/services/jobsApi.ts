@@ -7,10 +7,8 @@ import type {
   NormalizedJob,
 } from '../types/api'
 import { normalizeJob } from '../utils/normalizeJob'
+import { API_BASE_URL } from './apiBase'
 
-const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL ?? '')
-  .trim()
-  .replace(/\/+$/, '')
 const RECOMMENDABLE_JOBS_PATH = '/api/jobs?recommendableOnly=true'
 const LEGACY_JOBS_PATH = '/api/jobs'
 const REQUEST_TIMEOUT_MS = 15_000

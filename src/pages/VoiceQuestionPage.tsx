@@ -1,9 +1,19 @@
 import { useEffect, useRef, useState } from 'react'
-import type { VoiceQuestionId, VoiceQuestionStatus } from '../types/flow'
-import { VOICE_QUESTIONS, MOCK_ANSWERS } from '../data/voiceQuestions'
+import type {
+  VoiceAnswerData,
+  VoiceQuestionId,
+  VoiceQuestionStatus,
+} from '../types/flow'
+import type { VoiceAudioApiPayload } from '../types/api'
+import { VOICE_QUESTIONS } from '../data/voiceQuestions'
+import { ApiRequestError } from '../services/apiBase'
+import { submitVoiceAnswer } from '../services/voiceApi'
+import { blobToBase64 } from '../utils/audio'
 
-// Mock에서 강제로 에러를 발생시킬지 여부 (개발 테스트용)
-const MOCK_FORCE_ERROR = false
+const PREFERRED_AUDIO_MIME_TYPE = 'audio/webm;codecs=opus'
+const SILENCE_DURATION_MS = 5_000
+const SILENCE_THRESHOLD = 0.02
+const MAX_RECORDING_MS = 60_000
 
 function MicrophoneIcon({ className = '' }: { className?: string }) {
   return (
@@ -41,9 +51,11 @@ function VoiceWaveform() {
 }
 
 interface VoiceQuestionPageProps {
+  sessionId: string | null
   questionId: VoiceQuestionId
   answers: Record<VoiceQuestionId, string>
-  onAnswerChange: (id: VoiceQuestionId, answer: string) => void
+  onAnswerChange: (id: VoiceQuestionId, answer: VoiceAnswerData) => void
+  onSessionNotFound: () => void | Promise<void>
   onNext: () => void
   onPrev: () => void
   currentOrder: number
@@ -52,9 +64,11 @@ interface VoiceQuestionPageProps {
 }
 
 export function VoiceQuestionPage({
+  sessionId,
   questionId,
   answers,
   onAnswerChange,
+  onSessionNotFound,
   onNext,
   onPrev,
   currentOrder,
@@ -63,132 +77,350 @@ export function VoiceQuestionPage({
 }: VoiceQuestionPageProps) {
   const [status, setStatus] = useState<VoiceQuestionStatus>('idle')
   const [recordingTime, setRecordingTime] = useState(0)
-
-  // Timer 관리용 ref
-  const completionTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(
-    null
-  )
+  const [isSubmitting, setIsSubmitting] = useState(false)
   const timerIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null)
+  const mediaStreamRef = useRef<MediaStream | null>(null)
+  const audioContextRef = useRef<AudioContext | null>(null)
+  const audioSourceRef = useRef<MediaStreamAudioSourceNode | null>(null)
+  const analyserFrameRef = useRef<number | null>(null)
+  const maxRecordingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const requestAbortRef = useRef<AbortController | null>(null)
+  const audioChunksRef = useRef<Blob[]>([])
+  const recordingStartedAtRef = useRef(0)
+  const sampleRateRef = useRef<number | undefined>(undefined)
+  const requestGenerationRef = useRef(0)
+  const shouldSubmitOnStopRef = useRef(false)
+  const isStartingRef = useRef(false)
+  const isStoppingRef = useRef(false)
+  const isMountedRef = useRef(true)
 
   const question = VOICE_QUESTIONS.find((q) => q.id === questionId)
   const currentAnswer = answers[questionId]
 
-  // 질문이 변경되면 모든 상태를 초기화
-  useEffect(() => {
-    // 이전 timer 정리
-    if (completionTimeoutRef.current) {
-      clearTimeout(completionTimeoutRef.current)
-      completionTimeoutRef.current = null
+  const stopMonitoring = () => {
+    if (analyserFrameRef.current !== null) {
+      window.cancelAnimationFrame(analyserFrameRef.current)
+      analyserFrameRef.current = null
     }
-    if (timerIntervalRef.current) {
-      clearInterval(timerIntervalRef.current)
-      timerIntervalRef.current = null
+    if (maxRecordingTimeoutRef.current) {
+      window.clearTimeout(maxRecordingTimeoutRef.current)
+      maxRecordingTimeoutRef.current = null
+    }
+  }
+
+  const cleanupRecording = (cancelRecorder: boolean) => {
+    stopMonitoring()
+
+    const recorder = mediaRecorderRef.current
+    if (recorder && cancelRecorder) {
+      shouldSubmitOnStopRef.current = false
+      recorder.ondataavailable = null
+      recorder.onstop = null
+      recorder.onerror = null
+      if (recorder.state !== 'inactive') {
+        try {
+          recorder.stop()
+        } catch {
+          // The recorder may already be stopping.
+        }
+      }
+    }
+    mediaRecorderRef.current = null
+
+    mediaStreamRef.current?.getTracks().forEach((track) => track.stop())
+    mediaStreamRef.current = null
+
+    audioSourceRef.current?.disconnect()
+    audioSourceRef.current = null
+
+    const audioContext = audioContextRef.current
+    audioContextRef.current = null
+    if (audioContext && audioContext.state !== 'closed') {
+      void audioContext.close().catch(() => undefined)
     }
 
-    // 상태 초기화
-    setStatus('idle')
+    audioChunksRef.current = []
+    sampleRateRef.current = undefined
+    isStartingRef.current = false
+    isStoppingRef.current = false
+  }
+
+  const stopRecording = () => {
+    const recorder = mediaRecorderRef.current
+    if (
+      !recorder ||
+      recorder.state !== 'recording' ||
+      isStoppingRef.current
+    ) {
+      return
+    }
+
+    isStoppingRef.current = true
+    shouldSubmitOnStopRef.current = true
+    stopMonitoring()
+    recorder.stop()
+  }
+
+  const submitRecording = async (
+    recorder: MediaRecorder,
+    generation: number,
+    recordedQuestionId: VoiceQuestionId,
+    recordedSessionId: string,
+  ) => {
+    const shouldSubmit = shouldSubmitOnStopRef.current
+    shouldSubmitOnStopRef.current = false
+    const chunks = [...audioChunksRef.current]
+    const durationMs = Math.max(
+      0,
+      Math.round(performance.now() - recordingStartedAtRef.current),
+    )
+    const sampleRate = sampleRateRef.current
+    const blob = new Blob(chunks, {
+      type: recorder.mimeType || PREFERRED_AUDIO_MIME_TYPE,
+    })
+
+    cleanupRecording(false)
+    if (!shouldSubmit || generation !== requestGenerationRef.current) return
+
+    if (blob.size === 0) {
+      setStatus('error')
+      return
+    }
+
+    const controller = new AbortController()
+    requestAbortRef.current = controller
+    setIsSubmitting(true)
+
+    try {
+      const data = await blobToBase64(blob)
+      if (generation !== requestGenerationRef.current) return
+
+      const audio: VoiceAudioApiPayload = {
+        format: 'webm',
+        codec: 'opus',
+        encoding: 'base64',
+        duration_ms: durationMs,
+        data,
+        ...(sampleRate ? { sample_rate: sampleRate } : {}),
+      }
+      const response = await submitVoiceAnswer(
+        recordedSessionId,
+        recordedQuestionId,
+        audio,
+        controller.signal,
+      )
+
+      if (generation !== requestGenerationRef.current) return
+      if (response.status !== 'ok' || !response.stt_text) {
+        setStatus('error')
+        return
+      }
+
+      onAnswerChange(recordedQuestionId, {
+        sttText: response.stt_text,
+        keywords: response.keywords ?? [],
+        confidence: response.confidence,
+        answeredAt: response.answered_at,
+      })
+      setStatus('success')
+    } catch (error: unknown) {
+      if (error instanceof ApiRequestError && error.kind === 'ABORTED') return
+
+      if (
+        error instanceof ApiRequestError &&
+        error.status === 404 &&
+        error.errorCode === 'SESSION_NOT_FOUND'
+      ) {
+        await onSessionNotFound()
+        return
+      }
+
+      console.error('[Voice API] 음성 답변 처리 실패', error)
+      if (generation === requestGenerationRef.current) {
+        setStatus('error')
+      }
+    } finally {
+      if (requestAbortRef.current === controller) {
+        requestAbortRef.current = null
+      }
+      if (generation === requestGenerationRef.current && isMountedRef.current) {
+        setIsSubmitting(false)
+      }
+    }
+  }
+
+  const startRecording = async () => {
+    if (isSubmitting || isStartingRef.current || isStoppingRef.current) return
+
+    const generation = requestGenerationRef.current + 1
+    requestGenerationRef.current = generation
+    requestAbortRef.current?.abort()
+    requestAbortRef.current = null
+    cleanupRecording(true)
+    setStatus('recording')
     setRecordingTime(0)
-  }, [questionId])
+    isStartingRef.current = true
 
-  // 녹음 중 시간 표시용 interval
+    try {
+      if (!sessionId) {
+        throw new Error('음성 세션이 준비되지 않았습니다.')
+      }
+      if (!navigator.mediaDevices?.getUserMedia || typeof MediaRecorder === 'undefined') {
+        throw new Error('이 브라우저에서는 마이크 녹음을 지원하지 않습니다.')
+      }
+      if (!MediaRecorder.isTypeSupported(PREFERRED_AUDIO_MIME_TYPE)) {
+        throw new Error('이 브라우저에서는 webm/opus 녹음을 지원하지 않습니다.')
+      }
+
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
+      if (generation !== requestGenerationRef.current || !isMountedRef.current) {
+        stream.getTracks().forEach((track) => track.stop())
+        return
+      }
+
+      const AudioContextConstructor = (
+        window as typeof window & { webkitAudioContext?: typeof AudioContext }
+      ).AudioContext ?? (
+        window as typeof window & { webkitAudioContext?: typeof AudioContext }
+      ).webkitAudioContext
+      if (!AudioContextConstructor) {
+        stream.getTracks().forEach((track) => track.stop())
+        throw new Error('이 브라우저에서는 음량 감지를 지원하지 않습니다.')
+      }
+
+      const audioContext = new AudioContextConstructor()
+      if (audioContext.state === 'suspended') await audioContext.resume()
+      const source = audioContext.createMediaStreamSource(stream)
+      const analyser = audioContext.createAnalyser()
+      analyser.fftSize = 2048
+      source.connect(analyser)
+
+      const recorder = new MediaRecorder(stream, {
+        mimeType: PREFERRED_AUDIO_MIME_TYPE,
+      })
+      mediaStreamRef.current = stream
+      audioContextRef.current = audioContext
+      audioSourceRef.current = source
+      sampleRateRef.current = audioContext.sampleRate
+      mediaRecorderRef.current = recorder
+      audioChunksRef.current = []
+      recordingStartedAtRef.current = performance.now()
+      shouldSubmitOnStopRef.current = false
+      isStartingRef.current = false
+
+      recorder.ondataavailable = (event) => {
+        if (event.data.size > 0) audioChunksRef.current.push(event.data)
+      }
+      recorder.onstop = () => {
+        void submitRecording(recorder, generation, questionId, sessionId)
+      }
+      recorder.onerror = () => {
+        shouldSubmitOnStopRef.current = false
+        cleanupRecording(true)
+        if (generation === requestGenerationRef.current) setStatus('error')
+      }
+
+      recorder.start(1_000)
+      maxRecordingTimeoutRef.current = window.setTimeout(
+        stopRecording,
+        MAX_RECORDING_MS,
+      )
+
+      const samples = new Float32Array(analyser.fftSize)
+      let lastSoundAt = performance.now()
+      const monitorSilence = () => {
+        if (
+          mediaRecorderRef.current !== recorder ||
+          recorder.state !== 'recording'
+        ) {
+          return
+        }
+
+        analyser.getFloatTimeDomainData(samples)
+        let sumOfSquares = 0
+        for (const sample of samples) sumOfSquares += sample * sample
+        const rms = Math.sqrt(sumOfSquares / samples.length)
+        const now = performance.now()
+
+        if (rms >= SILENCE_THRESHOLD) lastSoundAt = now
+        if (now - lastSoundAt >= SILENCE_DURATION_MS) {
+          stopRecording()
+          return
+        }
+
+        analyserFrameRef.current = window.requestAnimationFrame(monitorSilence)
+      }
+      analyserFrameRef.current = window.requestAnimationFrame(monitorSilence)
+    } catch (error: unknown) {
+      console.error('[Voice recording] 녹음 시작 실패', error)
+      cleanupRecording(true)
+      if (generation === requestGenerationRef.current && isMountedRef.current) {
+        setStatus('error')
+      }
+    }
+  }
+
+  useEffect(() => {
+    requestGenerationRef.current += 1
+    requestAbortRef.current?.abort()
+    requestAbortRef.current = null
+    cleanupRecording(true)
+    setStatus(answers[questionId] && !isEditMode ? 'success' : 'idle')
+    setRecordingTime(0)
+    setIsSubmitting(false)
+  }, [questionId, sessionId])
+
   useEffect(() => {
     if (status === 'recording') {
-      timerIntervalRef.current = setInterval(() => {
-        setRecordingTime((prev) => prev + 1)
+      timerIntervalRef.current = window.setInterval(() => {
+        setRecordingTime((previous) => previous + 1)
       }, 100)
-    } else {
-      if (timerIntervalRef.current) {
-        clearInterval(timerIntervalRef.current)
-        timerIntervalRef.current = null
-      }
     }
 
     return () => {
       if (timerIntervalRef.current) {
-        clearInterval(timerIntervalRef.current)
+        window.clearInterval(timerIntervalRef.current)
         timerIntervalRef.current = null
       }
     }
   }, [status])
 
-  // 컴포넌트 unmount 시 cleanup
   useEffect(() => {
+    isMountedRef.current = true
     return () => {
-      if (completionTimeoutRef.current) {
-        clearTimeout(completionTimeoutRef.current)
-      }
+      isMountedRef.current = false
+      requestGenerationRef.current += 1
+      requestAbortRef.current?.abort()
+      requestAbortRef.current = null
+      cleanupRecording(true)
       if (timerIntervalRef.current) {
-        clearInterval(timerIntervalRef.current)
+        window.clearInterval(timerIntervalRef.current)
+        timerIntervalRef.current = null
       }
     }
   }, [])
 
-  const clearCompletionTimeout = () => {
-    if (completionTimeoutRef.current) {
-      clearTimeout(completionTimeoutRef.current)
-      completionTimeoutRef.current = null
-    }
-  }
-
-  const startMockRecording = () => {
-    // 이전 timeout 정리
-    clearCompletionTimeout()
-
-    // Mock: 2초 후 성공 (또는 강제 실패)
-    completionTimeoutRef.current = setTimeout(() => {
-      if (MOCK_FORCE_ERROR) {
-        setStatus('error')
-      } else {
-        setStatus('success')
-        onAnswerChange(questionId, MOCK_ANSWERS[questionId])
-      }
-      completionTimeoutRef.current = null
-    }, 2000)
-  }
-
   const handleMicClick = () => {
-    if (status === 'idle') {
-      setStatus('recording')
-      setRecordingTime(0)
-      startMockRecording()
-    } else if (status === 'recording') {
-      // 녹음 중 마이크 버튼 다시 클릭 시 조기 종료
-      clearCompletionTimeout()
-      if (MOCK_FORCE_ERROR) {
-        setStatus('error')
-      } else {
-        setStatus('success')
-        onAnswerChange(questionId, MOCK_ANSWERS[questionId])
-      }
-    } else if (status === 'success') {
-      setStatus('recording')
-      onAnswerChange(questionId, '')
-      setRecordingTime(0)
-      startMockRecording()
-    } else if (status === 'error') {
-      // error 상태에서 마이크 버튼 클릭 시 다시 시도
-      setStatus('recording')
-      setRecordingTime(0)
-      startMockRecording()
+    if (isSubmitting) return
+    if (status === 'recording') {
+      stopRecording()
+      return
     }
+    void startRecording()
   }
 
   const handleRetry = () => {
-    setStatus('recording')
-    onAnswerChange(questionId, '')
-    setRecordingTime(0)
-    startMockRecording()
+    if (!isSubmitting) void startRecording()
   }
 
   const handleNext = () => {
-    if (currentAnswer) {
-      onNext()
-    }
+    if (currentAnswer && status === 'success' && !isSubmitting) onNext()
   }
 
   if (!question) return null
 
-  const showAnswer = Boolean(currentAnswer) && status !== 'recording'
+  const showAnswer = Boolean(currentAnswer) && status === 'success'
   const showFooter = status === 'error' || showAnswer
 
   return (
@@ -233,8 +465,15 @@ export function VoiceQuestionPage({
 
           <button
             type="button"
-            aria-label={status === 'recording' ? '녹음 끝내기' : '말하기'}
+            aria-label={
+              isSubmitting
+                ? '음성 인식 처리 중'
+                : status === 'recording'
+                  ? '녹음 끝내기'
+                  : '말하기'
+            }
             onClick={handleMicClick}
+            disabled={isSubmitting}
             className={`relative mt-[clamp(96px,13svh,166px)] flex size-[clamp(148px,27vw,216px)] shrink-0 items-center justify-center rounded-full transition-colors focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-offset-4 ${
               status === 'recording'
                 ? 'border-[3px] border-[#2468F2] bg-[#2468F2] text-white shadow-[0_0_0_16px_rgba(36,104,242,0.10),0_0_0_32px_rgba(36,104,242,0.05)] focus-visible:ring-[#93B4FF]'
@@ -276,7 +515,8 @@ export function VoiceQuestionPage({
               <button
                 type="button"
                 onClick={handleRetry}
-                className="h-[clamp(68px,7.5svh,96px)] w-full rounded-[8px] bg-[#2468F2] text-[clamp(22px,3.5vw,28px)] font-extrabold text-white focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#93B4FF]"
+                disabled={isSubmitting}
+                className="h-[clamp(68px,7.5svh,96px)] w-full rounded-[8px] bg-[#2468F2] text-[clamp(22px,3.5vw,28px)] font-extrabold text-white focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#93B4FF] disabled:cursor-wait"
               >
                 다시 말하기
               </button>
@@ -292,6 +532,7 @@ export function VoiceQuestionPage({
                 <button
                   type="button"
                   onClick={handleNext}
+                  disabled={isSubmitting || status !== 'success'}
                   className="h-[clamp(68px,7.5svh,96px)] flex-1 rounded-[8px] bg-[#2468F2] text-[clamp(20px,3.25vw,26px)] font-extrabold text-white focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#93B4FF]"
                 >
                   수정 완료
@@ -301,7 +542,7 @@ export function VoiceQuestionPage({
               <button
                 type="button"
                 onClick={handleNext}
-                disabled={!currentAnswer}
+                disabled={!currentAnswer || status !== 'success' || isSubmitting}
                 className="h-[clamp(68px,7.5svh,96px)] w-full rounded-[8px] bg-[#2468F2] text-[clamp(22px,3.5vw,28px)] font-extrabold text-white focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#93B4FF] disabled:bg-[#D1D5DB]"
               >
                 다음
