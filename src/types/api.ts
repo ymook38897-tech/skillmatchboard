@@ -71,7 +71,7 @@ export interface VoiceAnswerApiRequest {
 export interface VoiceAnswerApiResponse {
   sessionId: string
   questionKey: VoiceQuestionKey
-  status: 'ok' | 'low_confidence'
+  status: 'ok' | 'no_speech'
   sttText?: string
   keywords?: string[]
   confidence?: number
@@ -98,5 +98,7 @@ export interface VoiceRecommendationApiResponse {
   sessionId: string
   basedOnQuestions: VoiceQuestionKey[]
   generatedAt: string
+  total: number
+  isFallback: boolean
   jobs: VoiceRecommendationApiJob[]
 }

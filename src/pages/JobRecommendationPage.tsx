@@ -42,7 +42,7 @@ export function JobRecommendationPage({
       <main className="relative mx-auto min-h-[100svh] w-full max-w-[800px] overflow-hidden bg-white px-[clamp(24px,6vw,48px)] pb-[clamp(152px,15svh,192px)] pt-[clamp(96px,14.45svh,185px)] sm:rounded-[24px]">
         <header className="text-center">
           <h1 className="text-[clamp(32px,5vw,40px)] font-extrabold leading-[1.28] tracking-[-0.035em] text-[#111827]">
-            잘 맞는 직무를 선택해보세요
+            잘 맞는 직무를 선택해주세요
           </h1>
           <p className="mt-[clamp(38px,6.6svh,84px)] text-[clamp(20px,3.75vw,30px)] font-medium text-[#526077]">
             3개까지 선택할 수 있어요

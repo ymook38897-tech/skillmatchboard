@@ -61,6 +61,7 @@ interface VoiceQuestionPageProps {
   currentOrder: number
   totalQuestions: number
   isEditMode?: boolean
+  isSessionPreparing?: boolean
 }
 
 export function VoiceQuestionPage({
@@ -74,6 +75,7 @@ export function VoiceQuestionPage({
   currentOrder,
   totalQuestions,
   isEditMode = false,
+  isSessionPreparing = false,
 }: VoiceQuestionPageProps) {
   const [status, setStatus] = useState<VoiceQuestionStatus>('idle')
   const [recordingTime, setRecordingTime] = useState(0)
@@ -212,7 +214,12 @@ export function VoiceQuestionPage({
       )
 
       if (generation !== requestGenerationRef.current) return
-      if (response.status !== 'ok' || !response.sttText) {
+      if (response.status === 'no_speech') {
+        setStatus('error')
+        return
+      }
+
+      if (!response.sttText) {
         setStatus('error')
         return
       }
@@ -229,8 +236,9 @@ export function VoiceQuestionPage({
 
       if (
         error instanceof ApiRequestError &&
-        error.status === 404 &&
-        error.errorCode === 'SESSION_NOT_FOUND'
+        ((error.status === 404 &&
+          error.errorCode === 'SESSION_NOT_FOUND') ||
+          (error.status === 410 && error.errorCode === 'SESSION_EXPIRED'))
       ) {
         await onSessionNotFound()
         return
@@ -251,7 +259,15 @@ export function VoiceQuestionPage({
   }
 
   const startRecording = async () => {
-    if (isSubmitting || isStartingRef.current || isStoppingRef.current) return
+    if (
+      !sessionId ||
+      isSessionPreparing ||
+      isSubmitting ||
+      isStartingRef.current ||
+      isStoppingRef.current
+    ) {
+      return
+    }
 
     const generation = requestGenerationRef.current + 1
     requestGenerationRef.current = generation
@@ -318,7 +334,9 @@ export function VoiceQuestionPage({
       recorder.onerror = () => {
         shouldSubmitOnStopRef.current = false
         cleanupRecording(true)
-        if (generation === requestGenerationRef.current) setStatus('error')
+        if (generation === requestGenerationRef.current) {
+          setStatus('microphone-error')
+        }
       }
 
       recorder.start(1_000)
@@ -356,7 +374,7 @@ export function VoiceQuestionPage({
       console.error('[Voice recording] 녹음 시작 실패', error)
       cleanupRecording(true)
       if (generation === requestGenerationRef.current && isMountedRef.current) {
-        setStatus('error')
+        setStatus('microphone-error')
       }
     }
   }
@@ -402,7 +420,7 @@ export function VoiceQuestionPage({
   }, [])
 
   const handleMicClick = () => {
-    if (isSubmitting) return
+    if (!sessionId || isSessionPreparing || isSubmitting) return
     if (status === 'recording') {
       stopRecording()
       return
@@ -411,7 +429,9 @@ export function VoiceQuestionPage({
   }
 
   const handleRetry = () => {
-    if (!isSubmitting) void startRecording()
+    if (sessionId && !isSessionPreparing && !isSubmitting) {
+      void startRecording()
+    }
   }
 
   const handleNext = () => {
@@ -421,7 +441,10 @@ export function VoiceQuestionPage({
   if (!question) return null
 
   const showAnswer = Boolean(currentAnswer) && status === 'success'
-  const showFooter = status === 'error' || showAnswer
+  const showCurrentAnswer =
+    Boolean(currentAnswer) && isEditMode && status !== 'success'
+  const showFooter = status === 'error' || showAnswer || isEditMode
+  const hasMicrophoneError = status === 'microphone-error'
 
   return (
     <div className="voice-flow-page min-h-[100svh] bg-[#EEF1F4]">
@@ -463,21 +486,39 @@ export function VoiceQuestionPage({
             {status === 'error' ? '목소리를 듣지 못했어요' : question.title}
           </h1>
 
+          {isEditMode && (
+            <p
+              className={`mt-[clamp(28px,3.5svh,44px)] rounded-full px-5 py-2 text-[clamp(15px,2.25vw,18px)] font-bold ${
+                status === 'recording'
+                  ? 'bg-[#FFF9E8] text-[#B7791F]'
+                  : 'bg-[#EFF6FF] text-[#2468F2]'
+              }`}
+            >
+              {status === 'recording' ? '답변 수정 녹음 중' : '답변 수정 중'}
+            </p>
+          )}
+
           <button
             type="button"
             aria-label={
               isSubmitting
                 ? '음성 인식 처리 중'
+                : isSessionPreparing
+                  ? '음성 세션 준비 중'
                 : status === 'recording'
                   ? '녹음 끝내기'
                   : '말하기'
             }
             onClick={handleMicClick}
-            disabled={isSubmitting}
-            className={`relative mt-[clamp(96px,13svh,166px)] flex size-[clamp(148px,27vw,216px)] shrink-0 items-center justify-center rounded-full transition-colors focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-offset-4 ${
+            disabled={!sessionId || isSessionPreparing || isSubmitting}
+            className={`relative ${
+              isEditMode
+                ? 'mt-[clamp(32px,4svh,52px)]'
+                : 'mt-[clamp(96px,13svh,166px)]'
+            } flex size-[clamp(148px,27vw,216px)] shrink-0 items-center justify-center rounded-full transition-colors focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-offset-4 ${
               status === 'recording'
                 ? 'border-[3px] border-[#2468F2] bg-[#2468F2] text-white shadow-[0_0_0_16px_rgba(36,104,242,0.10),0_0_0_32px_rgba(36,104,242,0.05)] focus-visible:ring-[#93B4FF]'
-                : status === 'error'
+                : status === 'error' || hasMicrophoneError
                   ? 'border-[3px] border-[#FF8B8B] bg-[#FFF4F4] text-[#F04444] focus-visible:ring-[#FFC9C9]'
                   : 'border-[3px] border-[#8EB4FF] bg-white text-[#2468F2] focus-visible:ring-[#93B4FF]'
             }`}
@@ -490,11 +531,21 @@ export function VoiceQuestionPage({
               <VoiceWaveform />
               <span className="sr-only">{(recordingTime / 10).toFixed(1)}초</span>
             </div>
-          ) : status !== 'error' ? (
-            <p className="mt-[clamp(48px,7.5svh,96px)] text-[clamp(23px,3.75vw,30px)] font-extrabold text-[#2468F2]">
-              말하기
+          ) : status !== 'error' && !hasMicrophoneError ? (
+            <p className="mt-[clamp(42px,5.5svh,70px)] whitespace-pre-line text-[clamp(20px,3.25vw,26px)] font-extrabold leading-[1.45] text-[#2468F2]">
+              {status === 'success'
+                ? '수정하시려면\n다시 버튼을 눌러주세요'
+                : '버튼을 눌러주세요'}
             </p>
           ) : null}
+
+          {status === 'idle' && !isEditMode && (
+            <div className="mt-[clamp(42px,5svh,64px)] space-y-2 text-[clamp(15px,2.4vw,19px)] font-medium leading-[1.45] text-[#697386]">
+              {question.examples.map((example) => (
+                <p key={example}>&ldquo;{example}&rdquo;</p>
+              ))}
+            </div>
+          )}
 
           {showAnswer && (
             <div className="relative mt-[clamp(54px,6.4svh,82px)] w-full rounded-[8px] border-2 border-[#8EB4FF] bg-white px-[clamp(20px,3.75vw,30px)] py-[clamp(18px,2.5svh,32px)] text-left before:absolute before:-top-[11px] before:left-1/2 before:size-5 before:-translate-x-1/2 before:rotate-45 before:border-l-2 before:border-t-2 before:border-[#8EB4FF] before:bg-white">
@@ -503,6 +554,31 @@ export function VoiceQuestionPage({
               </p>
               <p className="mt-2 text-[clamp(18px,2.75vw,22px)] font-medium leading-[1.5] text-[#111827]">
                 {currentAnswer}
+              </p>
+            </div>
+          )}
+
+          {showCurrentAnswer && (
+            <div className="mt-[clamp(54px,6.4svh,82px)] w-full rounded-[8px] border-2 border-[#8EB4FF] bg-white px-[clamp(20px,3.75vw,30px)] py-[clamp(18px,2.5svh,32px)] text-left">
+              <p className="text-[clamp(14px,2vw,16px)] font-bold text-[#6B7280]">
+                현재 답변
+              </p>
+              <p className="mt-2 text-[clamp(18px,2.75vw,22px)] font-medium leading-[1.5] text-[#111827]">
+                {currentAnswer}
+              </p>
+            </div>
+          )}
+
+          {hasMicrophoneError && (
+            <div
+              role="alert"
+              className="mt-[clamp(92px,11svh,140px)] w-full rounded-[8px] border-2 border-[#FF8B8B] bg-[#FFF4F4] px-[clamp(18px,3vw,24px)] py-[clamp(16px,2svh,26px)] text-left text-[#E23B3B]"
+            >
+              <p className="text-[clamp(18px,3vw,24px)] font-extrabold">
+                ⚠ 마이크를 사용할 수 없어요
+              </p>
+              <p className="mt-1 text-[clamp(15px,2.4vw,19px)] font-medium">
+                마이크 권한을 확인해 주세요
               </p>
             </div>
           )}
@@ -539,14 +615,23 @@ export function VoiceQuestionPage({
                 </button>
               </div>
             ) : (
-              <button
-                type="button"
-                onClick={handleNext}
-                disabled={!currentAnswer || status !== 'success' || isSubmitting}
-                className="h-[clamp(68px,7.5svh,96px)] w-full rounded-[8px] bg-[#2468F2] text-[clamp(22px,3.5vw,28px)] font-extrabold text-white focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#93B4FF] disabled:bg-[#D1D5DB]"
-              >
-                다음
-              </button>
+              <div className="flex gap-4">
+                <button
+                  type="button"
+                  onClick={onPrev}
+                  className="h-[clamp(68px,7.5svh,96px)] flex-1 rounded-[8px] border-2 border-[#8EB4FF] bg-white text-[clamp(20px,3.25vw,26px)] font-extrabold text-[#2468F2] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#BFDBFE]"
+                >
+                  이전
+                </button>
+                <button
+                  type="button"
+                  onClick={handleNext}
+                  disabled={!currentAnswer || status !== 'success' || isSubmitting}
+                  className="h-[clamp(68px,7.5svh,96px)] flex-1 rounded-[8px] bg-[#2468F2] text-[clamp(20px,3.25vw,26px)] font-extrabold text-white focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#93B4FF] disabled:bg-[#D1D5DB]"
+                >
+                  다음
+                </button>
+              </div>
             )}
           </footer>
         )}

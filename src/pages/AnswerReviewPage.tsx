@@ -2,6 +2,8 @@
 
 interface AnswerReviewPageProps {
   answers: VoiceInterviewAnswers
+  selectedCertificationLabel?: string
+  didSkipCertification?: boolean
   onEdit: (questionId: VoiceQuestionId) => void
   onNext: () => void
   onPrev: () => void
@@ -10,16 +12,26 @@ interface AnswerReviewPageProps {
 
 export function AnswerReviewPage({
   answers,
+  selectedCertificationLabel = '',
+  didSkipCertification = false,
   onEdit,
   onNext,
   isSubmitting = false,
 }: AnswerReviewPageProps) {
   const reviewItems: { id: VoiceQuestionId; label: string }[] = [
-    { id: 'difficulty', label: '어려운 일' },
-    { id: 'experience', label: '해본 일' },
-    { id: 'interest', label: '하고 싶은 일' },
-    { id: 'strength', label: '자신 있는 일' },
+    { id: 'difficulty', label: '피하고 싶은 일' },
+    { id: 'experience', label: '기억나는 일' },
+    { id: 'interest', label: '해보고 싶은 일' },
+    { id: 'strength', label: '평소에 자주 하는 일' },
+    { id: 'certificate', label: '보유 자격증' },
   ]
+
+  const getDisplayValue = (id: VoiceQuestionId) => {
+    if (id !== 'certificate') return answers[id]
+    if (selectedCertificationLabel) return selectedCertificationLabel
+    if (didSkipCertification) return '안 고르기'
+    return answers.certificate
+  }
 
   return (
     <div className="voice-flow-page min-h-[100svh] bg-[#EEF1F4]">
@@ -41,7 +53,7 @@ export function AnswerReviewPage({
                   {item.label}
                 </h2>
                 <p className="mt-2 line-clamp-2 text-[clamp(20px,3.75vw,30px)] font-medium leading-[1.35] tracking-[-0.025em] text-[#111827]">
-                  {answers[item.id]}
+                  {getDisplayValue(item.id)}
                 </p>
               </div>
               <button

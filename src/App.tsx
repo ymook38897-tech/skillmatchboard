@@ -1,6 +1,7 @@
 ﻿import { useState } from 'react'
 import { useRef } from 'react'
 import type {
+  CertificationCandidate,
   VoiceAnswerData,
   VoiceFlowStep,
   VoiceInterviewAnswerDetails,
@@ -16,11 +17,16 @@ import { VoiceQuestionPage } from './pages/VoiceQuestionPage'
 import { AnswerReviewPage } from './pages/AnswerReviewPage'
 import { JobRecommendationPage } from './pages/JobRecommendationPage'
 import { ResumeGenerationPage } from './pages/ResumeGenerationPage'
+import { VoiceCertificationSelectionPage } from './pages/VoiceCertificationSelectionPage'
 import { HelpModal } from './components/common/HelpModal'
+import { LoadingScreen } from './components/common/LoadingScreen'
 import { ApiRequestError } from './services/apiBase'
 import { fetchVoiceRecommendations } from './services/recommendationApi'
 import { createVoiceSession } from './services/sessionApi'
 import { QUESTION_ID_MAP } from './services/voiceApi'
+
+// 자격증 후보 API 계약이 확정되기 전까지 운영 화면에 임의 목록을 노출하지 않는다.
+const CERTIFICATION_CANDIDATES: CertificationCandidate[] = []
 
 function createInitialAnswers(): VoiceInterviewAnswers {
   return {
@@ -44,7 +50,12 @@ export function App() {
   const [selectedJobs, setSelectedJobs] = useState<VoiceJob[]>([])
   const [currentQuestionOrder, setCurrentQuestionOrder] = useState(1)
   const [editingQuestionId, setEditingQuestionId] = useState<VoiceQuestionId | null>(null)
+  const [selectedCertificationId, setSelectedCertificationId] = useState<string | null>(null)
+  const [selectedCertificationLabel, setSelectedCertificationLabel] = useState('')
+  const [didSkipCertification, setDidSkipCertification] = useState(false)
   const [showHelpModal, setShowHelpModal] = useState(false)
+  const [isSessionPreparing, setIsSessionPreparing] = useState(false)
+  const [isSessionLoading, setIsSessionLoading] = useState(false)
   const [isRecommendationLoading, setIsRecommendationLoading] = useState(false)
   const sessionCreationRef = useRef<Promise<string> | null>(null)
   const sessionRecoveryRef = useRef<Promise<void> | null>(null)
@@ -101,14 +112,20 @@ export function App() {
     goToStep('tutorial')
   }
 
-  const handleTutorialNext = async () => {
-    try {
-      await ensureSession()
-      goToQuestionOrder(1)
-      goToStep('voice-question')
-    } catch (error: unknown) {
-      console.error('[Session API] 세션 생성 실패', error)
-    }
+  const handleTutorialComplete = () => {
+    goToQuestionOrder(1)
+    goToStep('voice-question')
+
+    if (sessionId) return
+
+    setIsSessionPreparing(true)
+    void ensureSession()
+      .catch((error: unknown) => {
+        console.error('[Session API] 세션 생성 실패', error)
+      })
+      .finally(() => {
+        setIsSessionPreparing(false)
+      })
   }
 
   const handleTutorialPrev = () => {
@@ -119,14 +136,35 @@ export function App() {
     if (currentQuestionOrder < totalQuestions) {
       goToQuestionOrder(currentQuestionOrder + 1)
     } else {
-      goToStep('answer-review')
+      goToStep('certification-selection')
     }
   }
 
   const handleVoiceQuestionPrev = () => {
     if (currentQuestionOrder > 1) {
       goToQuestionOrder(currentQuestionOrder - 1)
+    } else {
+      goToStep('tutorial')
     }
+  }
+
+  const handleCertificationPrev = () => {
+    goToQuestionOrder(totalQuestions)
+    goToStep('voice-question')
+  }
+
+  const handleCertificationSkip = () => {
+    setSelectedCertificationId(null)
+    setSelectedCertificationLabel('')
+    setDidSkipCertification(true)
+    goToStep('answer-review')
+  }
+
+  const handleCertificationComplete = (candidate: CertificationCandidate) => {
+    setSelectedCertificationId(candidate.id)
+    setSelectedCertificationLabel(candidate.label)
+    setDidSkipCertification(false)
+    goToStep('answer-review')
   }
 
   const handleEditAnswer = (questionId: VoiceQuestionId) => {
@@ -148,6 +186,9 @@ export function App() {
     setSelectedJobs([])
     setCurrentQuestionOrder(1)
     setEditingQuestionId(null)
+    setSelectedCertificationId(null)
+    setSelectedCertificationLabel('')
+    setDidSkipCertification(false)
   }
 
   const handleSessionNotFound = (): Promise<void> => {
@@ -155,6 +196,7 @@ export function App() {
 
     resetVoiceSessionData()
     goToStep('tutorial')
+    setIsSessionLoading(true)
 
     const recovery = (async () => {
       try {
@@ -165,6 +207,7 @@ export function App() {
         console.error('[Session API] 만료 세션 재생성 실패', error)
       } finally {
         sessionRecoveryRef.current = null
+        setIsSessionLoading(false)
       }
     })()
 
@@ -185,11 +228,7 @@ export function App() {
 
     const missingKey = missing.find(
       (value): value is VoiceQuestionKey =>
-        value === 'C' ||
-        value === 'D' ||
-        value === 'E' ||
-        value === 'F' ||
-        value === 'G',
+        value === 'D' || value === 'E' || value === 'F',
     )
     return missingKey ? QUESTION_ID_MAP[missingKey] : null
   }
@@ -222,8 +261,9 @@ export function App() {
 
       if (
         error instanceof ApiRequestError &&
-        error.status === 404 &&
-        error.errorCode === 'SESSION_NOT_FOUND'
+        ((error.status === 404 &&
+          error.errorCode === 'SESSION_NOT_FOUND') ||
+          (error.status === 410 && error.errorCode === 'SESSION_EXPIRED'))
       ) {
         await handleSessionNotFound()
         return
@@ -231,8 +271,8 @@ export function App() {
 
       if (
         error instanceof ApiRequestError &&
-        error.status === 409 &&
-        error.errorCode === 'INCOMPLETE_ANSWERS'
+        error.status === 400 &&
+        error.errorCode === 'MISSING_ANSWERS'
       ) {
         const missingQuestionId = getFirstMissingQuestionId(error)
         console.error('[Recommendation API] 답변 누락', error.details)
@@ -289,6 +329,13 @@ export function App() {
     setSelectedJobs([])
     setCurrentQuestionOrder(1)
     setEditingQuestionId(null)
+    setSelectedCertificationId(null)
+    setSelectedCertificationLabel('')
+    setDidSkipCertification(false)
+  }
+
+  if (isSessionLoading || isRecommendationLoading) {
+    return <LoadingScreen />
   }
 
   return (
@@ -302,7 +349,7 @@ export function App() {
 
       {currentStep === 'tutorial' && (
         <TutorialPage
-          onNext={handleTutorialNext}
+          onComplete={handleTutorialComplete}
           onPrev={handleTutorialPrev}
           onHelp={() => setShowHelpModal(true)}
         />
@@ -335,16 +382,29 @@ export function App() {
           currentOrder={currentQuestionOrder}
           totalQuestions={totalQuestions}
           isEditMode={editingQuestionId !== null}
+          isSessionPreparing={isSessionPreparing}
         />
       )}
 
       {currentStep === 'answer-review' && (
         <AnswerReviewPage
           answers={answers}
+          selectedCertificationLabel={selectedCertificationLabel}
+          didSkipCertification={didSkipCertification}
           onEdit={handleEditAnswer}
           onNext={handleAnswerReviewNext}
           onPrev={handleAnswerReviewPrev}
           isSubmitting={isRecommendationLoading}
+        />
+      )}
+
+      {currentStep === 'certification-selection' && (
+        <VoiceCertificationSelectionPage
+          candidates={CERTIFICATION_CANDIDATES}
+          initialSelectedId={selectedCertificationId}
+          onPrev={handleCertificationPrev}
+          onSkip={handleCertificationSkip}
+          onComplete={handleCertificationComplete}
         />
       )}
 

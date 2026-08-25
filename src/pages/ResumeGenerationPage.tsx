@@ -155,6 +155,14 @@ export function ResumeGenerationPage({
           <p className="mt-[clamp(28px,3.5svh,44px)] text-center text-[clamp(15px,2.25vw,18px)] font-medium text-[#6B7280]">
             2분 동안 화면에 표시됩니다
           </p>
+
+          <button
+            type="button"
+            onClick={onComplete}
+            className="mx-auto mt-[clamp(24px,3svh,38px)] block h-[clamp(68px,7.5svh,96px)] w-full max-w-[570px] rounded-[8px] bg-[#2468F2] text-[clamp(22px,3.5vw,28px)] font-extrabold text-white focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#93B4FF]"
+          >
+            처음으로 돌아가기
+          </button>
         </div>
 
       </main>

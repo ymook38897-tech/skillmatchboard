@@ -100,13 +100,23 @@ export function parseRecommendationResponse(
     )
   }
 
-  const { sessionId, basedOnQuestions, generatedAt, jobs } = payload
+  const {
+    sessionId,
+    basedOnQuestions,
+    generatedAt,
+    total,
+    isFallback,
+    jobs,
+  } = payload
   if (
     typeof sessionId !== 'string' ||
     !sessionId.trim() ||
     !Array.isArray(basedOnQuestions) ||
     !basedOnQuestions.every(isQuestionKey) ||
     typeof generatedAt !== 'string' ||
+    !Number.isInteger(total) ||
+    (total as number) < 0 ||
+    typeof isFallback !== 'boolean' ||
     !Array.isArray(jobs)
   ) {
     throw new ApiRequestError(
@@ -120,6 +130,8 @@ export function parseRecommendationResponse(
     sessionId,
     basedOnQuestions,
     generatedAt,
+    total: total as number,
+    isFallback,
     jobs: jobs.slice(0, 5).map(parseRecommendationJob),
   }
 }

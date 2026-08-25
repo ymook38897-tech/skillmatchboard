@@ -81,12 +81,23 @@ export type VoiceQuestionId =
   | 'strength'
   | 'certificate'
 
-export type VoiceQuestionStatus = 'idle' | 'recording' | 'success' | 'error'
+export type VoiceQuestionStatus =
+  | 'idle'
+  | 'recording'
+  | 'success'
+  | 'error'
+  | 'microphone-error'
 
 export interface VoiceQuestion {
   id: VoiceQuestionId
   title: string
   order: number
+  examples: string[]
+}
+
+export interface CertificationCandidate {
+  id: string
+  label: string
 }
 
 export interface VoiceInterviewAnswers {
@@ -122,6 +133,7 @@ export type VoiceFlowStep =
   | 'start'
   | 'tutorial'
   | 'voice-question'
+  | 'certification-selection'
   | 'answer-review'
   | 'job-recommendation'
   | 'resume'

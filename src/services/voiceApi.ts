@@ -51,7 +51,7 @@ export function parseVoiceAnswerResponse(
     typeof sessionId !== 'string' ||
     !sessionId.trim() ||
     !isVoiceQuestionKey(questionKey) ||
-    (status !== 'ok' && status !== 'low_confidence')
+    (status !== 'ok' && status !== 'no_speech')
   ) {
     throw new ApiRequestError(
       'INVALID_RESPONSE',
