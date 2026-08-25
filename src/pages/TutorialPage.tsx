@@ -9,9 +9,8 @@ interface TutorialPageProps {
 interface TutorialStep {
   cardTitle: string
   cardDescription: string
-  microphoneState: 'idle' | 'recording'
-  hasPointer?: boolean
-  hideSubtitle?: boolean
+  microphoneState: 'idle' | 'recording' | 'error'
+  isError?: boolean
 }
 
 const TUTORIAL_STEPS: TutorialStep[] = [
@@ -26,16 +25,15 @@ const TUTORIAL_STEPS: TutorialStep[] = [
     microphoneState: 'recording',
   },
   {
-    cardTitle: '마이크 버튼',
-    cardDescription: '답변이 잘못되면 버튼을 다시 눌러주세요.',
-    microphoneState: 'idle',
-    hasPointer: true,
-  },
-  {
     cardTitle: '녹음 카드',
     cardDescription: '이 카드에 녹음된 음성이 나타나요.',
     microphoneState: 'idle',
-    hideSubtitle: true,
+  },
+  {
+    cardTitle: '음성 인식 실패',
+    cardDescription: '누르면 음성 인식이 다시 시작돼요.',
+    microphoneState: 'error',
+    isError: true,
   },
 ]
 
@@ -62,6 +60,7 @@ function MicrophoneIcon({ className = '' }: { className?: string }) {
 
 function TutorialMicrophone({ state }: { state: TutorialStep['microphoneState'] }) {
   const isRecording = state === 'recording'
+  const isError = state === 'error'
 
   return (
     <div className="flex h-[400px] w-[304px] shrink-0 flex-col items-center gap-[51.2px] pt-[6.4px]">
@@ -70,11 +69,13 @@ function TutorialMicrophone({ state }: { state: TutorialStep['microphoneState'] 
           className={
             isRecording
               ? 'flex size-[216px] items-center justify-center rounded-full bg-[#2563EB] shadow-[0_0_0_12px_#EFF6FF,0_0_0_24px_#F8FBFF]'
+              : isError
+                ? 'flex size-[216px] items-center justify-center rounded-full border-2 border-[#EF4444] bg-[#FFF1F2]'
               : 'flex size-[216px] items-center justify-center rounded-full border-2 border-[#3B82F6] bg-white'
           }
         >
           <MicrophoneIcon
-            className={`size-[64px] ${isRecording ? 'text-white' : 'text-[#2563EB]'}`}
+            className={`size-[64px] ${isRecording ? 'text-white' : isError ? 'text-[#EF4444]' : 'text-[#2563EB]'}`}
           />
         </div>
       </div>
@@ -92,11 +93,11 @@ function TutorialMicrophone({ state }: { state: TutorialStep['microphoneState'] 
             />
           ))}
         </div>
-      ) : (
+      ) : !isError ? (
         <p className="whitespace-nowrap text-[clamp(30px,4.8vw,38.4px)] font-bold leading-[57.6px] text-[#2563EB]">
           말하기
         </p>
-      )}
+      ) : null}
     </div>
   )
 }
@@ -131,11 +132,9 @@ export function TutorialPage({ onNext, onPrev }: TutorialPageProps) {
           <h1 className="w-full text-[clamp(38px,6vw,48px)] font-bold leading-[1.5] tracking-normal text-[#0F172A]">
             버튼 설명
           </h1>
-          {!step.hideSubtitle && (
-            <p className="w-full text-[clamp(20px,3.25vw,26px)] font-normal leading-[1.5] text-[#475569]">
-              이것만 기억해 주세요.
-            </p>
-          )}
+          <p className="w-full text-[clamp(20px,3.25vw,26px)] font-normal leading-[1.5] text-[#475569]">
+            이것만 기억해 주세요.
+          </p>
         </header>
 
         <div className="flex min-h-[764px] w-full flex-1 flex-col items-center gap-[clamp(40px,8vw,64px)] pt-[clamp(40px,8vw,64px)]">
@@ -143,17 +142,8 @@ export function TutorialPage({ onNext, onPrev }: TutorialPageProps) {
 
           <section
             aria-live="polite"
-            className={`relative flex w-full ${step.hasPointer ? 'h-[242px] max-w-[680px] gap-2 overflow-visible' : 'h-[236px] max-w-[640px] gap-[6px] overflow-hidden'} shrink-0 flex-col items-start rounded-[12px] border-2 border-[#3B82F6] bg-white p-[18px] text-left shadow-[0_2px_12px_rgba(15,23,42,0.10)]`}
+            className="relative flex h-[236px] w-full max-w-[640px] shrink-0 flex-col items-start gap-[6px] overflow-hidden rounded-[12px] border-2 border-[#3B82F6] bg-white p-[18px] text-left shadow-[0_2px_12px_rgba(15,23,42,0.10)]"
           >
-            {step.hasPointer && (
-              <div
-                aria-hidden="true"
-                className="absolute left-1/2 top-[-28px] h-7 w-14 -translate-x-1/2 bg-[#3B82F6] [clip-path:polygon(50%_0,100%_100%,0_100%)]"
-              >
-                <span className="absolute inset-x-0.5 bottom-[-2px] top-0.5 block bg-white [clip-path:polygon(50%_0,100%_100%,0_100%)]" />
-              </div>
-            )}
-
             <h2 className="w-full text-[clamp(26px,4.5vw,36px)] font-bold leading-[1.5] text-[#0F172A]">
               {step.cardTitle}
             </h2>
@@ -169,34 +159,46 @@ export function TutorialPage({ onNext, onPrev }: TutorialPageProps) {
               >
                 {tutorialStep + 1}/4
               </p>
-              <div className="flex h-[50px] min-w-0 flex-1 items-center justify-end gap-2">
-                <button
-                  type="button"
-                  onClick={onNext}
-                  className="h-[50px] w-[clamp(82px,15vw,120px)] shrink-0 rounded-[8px] border-2 border-[#E2E8F0] bg-white px-1 text-center text-[clamp(16px,3.25vw,26px)] font-normal leading-[1.5] whitespace-nowrap text-[#475569] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#BFDBFE]"
-                >
-                  건너뛰기
-                </button>
-                <button
-                  type="button"
-                  onClick={handlePrevious}
-                  className="h-[50px] w-[clamp(82px,15vw,120px)] shrink-0 rounded-[8px] border-2 border-[#E2E8F0] bg-white px-1 text-center text-[clamp(16px,3.25vw,26px)] font-normal leading-[1.5] whitespace-nowrap text-[#475569] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#BFDBFE]"
-                >
-                  이전으로
-                </button>
-                <button
-                  type="button"
-                  onClick={handleNext}
-                  className="h-[50px] w-[clamp(82px,15vw,120px)] shrink-0 rounded-[8px] border-2 border-[#3B82F6] bg-[#2563EB] px-1 text-center text-[clamp(16px,3.25vw,26px)] font-normal leading-[1.5] whitespace-nowrap text-white focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#93B4FF]"
-                >
-                  다음으로
-                </button>
-              </div>
+              {!step.isError && (
+                <div className="flex h-[50px] min-w-0 flex-1 items-center justify-end gap-2">
+                  <button
+                    type="button"
+                    onClick={onNext}
+                    className="h-[50px] w-[clamp(82px,15vw,120px)] shrink-0 rounded-[8px] border-2 border-[#E2E8F0] bg-white px-1 text-center text-[clamp(16px,3.25vw,26px)] font-normal leading-[1.5] whitespace-nowrap text-[#475569] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#BFDBFE]"
+                  >
+                    건너뛰기
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handlePrevious}
+                    className="h-[50px] w-[clamp(82px,15vw,120px)] shrink-0 rounded-[8px] border-2 border-[#E2E8F0] bg-white px-1 text-center text-[clamp(16px,3.25vw,26px)] font-normal leading-[1.5] whitespace-nowrap text-[#475569] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#BFDBFE]"
+                  >
+                    이전으로
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleNext}
+                    className="h-[50px] w-[clamp(82px,15vw,120px)] shrink-0 rounded-[8px] border-2 border-[#3B82F6] bg-[#2563EB] px-1 text-center text-[clamp(16px,3.25vw,26px)] font-normal leading-[1.5] whitespace-nowrap text-white focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#93B4FF]"
+                  >
+                    다음으로
+                  </button>
+                </div>
+              )}
             </div>
           </section>
         </div>
 
-        {!step.hideSubtitle && <div aria-hidden="true" className="h-[94px] w-full shrink-0" />}
+        {step.isError ? (
+          <button
+            type="button"
+            onClick={handleNext}
+            className="h-[96px] w-full shrink-0 rounded-[8px] border-2 border-[#3B82F6] bg-[#2563EB] px-6 text-[clamp(22px,4vw,32px)] font-bold text-white focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#93B4FF]"
+          >
+            다음
+          </button>
+        ) : (
+          <div aria-hidden="true" className="h-[94px] w-full shrink-0" />
+        )}
       </main>
     </div>
   )
