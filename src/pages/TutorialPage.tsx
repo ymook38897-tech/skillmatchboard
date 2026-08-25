@@ -3,7 +3,6 @@ import { useState } from 'react'
 interface TutorialPageProps {
   onComplete: () => void
   onPrev: () => void
-  onHelp: () => void
 }
 
 interface TutorialStep {

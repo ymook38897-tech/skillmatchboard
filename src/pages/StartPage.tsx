@@ -1,6 +1,5 @@
 interface StartPageProps {
   onStart: () => void
-  onHelp: () => void
 }
 
 export function StartPage({ onStart }: StartPageProps) {

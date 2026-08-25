@@ -18,7 +18,6 @@ import { AnswerReviewPage } from './pages/AnswerReviewPage'
 import { JobRecommendationPage } from './pages/JobRecommendationPage'
 import { ResumeGenerationPage } from './pages/ResumeGenerationPage'
 import { VoiceCertificationSelectionPage } from './pages/VoiceCertificationSelectionPage'
-import { HelpModal } from './components/common/HelpModal'
 import { LoadingScreen } from './components/common/LoadingScreen'
 import { ApiRequestError } from './services/apiBase'
 import { fetchVoiceRecommendations } from './services/recommendationApi'
@@ -53,7 +52,6 @@ export function App() {
   const [selectedCertificationId, setSelectedCertificationId] = useState<string | null>(null)
   const [selectedCertificationLabel, setSelectedCertificationLabel] = useState('')
   const [didSkipCertification, setDidSkipCertification] = useState(false)
-  const [showHelpModal, setShowHelpModal] = useState(false)
   const [isSessionPreparing, setIsSessionPreparing] = useState(false)
   const [isSessionLoading, setIsSessionLoading] = useState(false)
   const [isRecommendationLoading, setIsRecommendationLoading] = useState(false)
@@ -341,17 +339,13 @@ export function App() {
   return (
     <>
       {currentStep === 'start' && (
-        <StartPage
-          onStart={handleStartTutorial}
-          onHelp={() => setShowHelpModal(true)}
-        />
+        <StartPage onStart={handleStartTutorial} />
       )}
 
       {currentStep === 'tutorial' && (
         <TutorialPage
           onComplete={handleTutorialComplete}
           onPrev={handleTutorialPrev}
-          onHelp={() => setShowHelpModal(true)}
         />
       )}
 
@@ -426,12 +420,6 @@ export function App() {
         />
       )}
 
-      {showHelpModal && (
-        <HelpModal
-          isOpen={showHelpModal}
-          onClose={() => setShowHelpModal(false)}
-        />
-      )}
     </>
   )
 }

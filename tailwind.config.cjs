@@ -41,20 +41,6 @@ module.exports = {
           900: '#0d0c0c',
         },
       },
-      fontFamily: {
-        sans: [
-          'NanumSquareRound',
-          'Apple SD Gothic Neo',
-          'Malgun Gothic',
-          'sans-serif',
-        ],
-        display: [
-          'NanumSquareRound',
-          'Apple SD Gothic Neo',
-          'Malgun Gothic',
-          'sans-serif',
-        ],
-      },
       fontSize: {
         xs: ['12px', { lineHeight: '16px' }],
         sm: ['14px', { lineHeight: '20px' }],
