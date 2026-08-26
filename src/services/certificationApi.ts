@@ -1,4 +1,3 @@
-import type { MatchedCertification } from '../types/api'
 import { ApiRequestError, isRecord, getJson } from './apiBase'
 
 export interface CertificationQueryParams {
@@ -9,12 +8,15 @@ export interface CertificationQueryParams {
   offset?: number
 }
 
-export interface Certification extends MatchedCertification {
+export interface Certification {
   certCode: string
   certName: string
+  grade?: string | null
   fieldOfficial?: string | null
-  commonRank?: string | null
-  jobCodes?: number[] | null
+  fieldGroup?: string | null
+  kind?: string | null
+  commonRank: number | null
+  jobCodes: string[]
   verified?: boolean
 }
 
@@ -28,8 +30,9 @@ function isCertification(value: unknown): value is Certification {
   return (
     typeof value.certCode === 'string' &&
     typeof value.certName === 'string' &&
-    (value.code === undefined || typeof value.code === 'string') &&
-    (value.name === undefined || typeof value.name === 'string')
+    (value.commonRank === null || typeof value.commonRank === 'number') &&
+    Array.isArray(value.jobCodes) &&
+    value.jobCodes.every((code): code is string => typeof code === 'string')
   )
 }
 
