@@ -111,18 +111,25 @@ export function App() {
   }
 
   const handleTutorialComplete = () => {
-    goToQuestionOrder(1)
-    goToStep('voice-question')
-
-    if (sessionId) return
+    if (sessionId) {
+      goToQuestionOrder(1)
+      goToStep('voice-question')
+      return
+    }
 
     setIsSessionPreparing(true)
+    setIsSessionLoading(true)
     void ensureSession()
+      .then(() => {
+        goToQuestionOrder(1)
+        goToStep('voice-question')
+      })
       .catch((error: unknown) => {
         console.error('[Session API] 세션 생성 실패', error)
       })
       .finally(() => {
         setIsSessionPreparing(false)
+        setIsSessionLoading(false)
       })
   }
 

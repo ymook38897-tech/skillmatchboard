@@ -262,3 +262,46 @@ test('녹음 시작 후 5초 동안 말이 없으면 STT 요청 없이 다시 �
   ).toBeVisible()
   expect(voiceAnswerRequestCount).toBe(0)
 })
+
+test('세션 생성 실패 후 Tutorial에서 다시 시도할 수 있다', async ({ page }) => {
+  let sessionRequestCount = 0
+
+  await page.route('**/api/sessions', async (route) => {
+    sessionRequestCount += 1
+
+    if (sessionRequestCount === 1) {
+      await route.fulfill({
+        status: 503,
+        contentType: 'application/json',
+        body: JSON.stringify({ errorCode: 'SESSION_UNAVAILABLE' }),
+      })
+      return
+    }
+
+    await route.fulfill({
+      status: 201,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        sessionId: 'recovered-session',
+        createdAt: new Date().toISOString(),
+        expiresAt: new Date(Date.now() + 1_200_000).toISOString(),
+        idleTimeoutSeconds: 120,
+        maxTtlSeconds: 1_200,
+      }),
+    })
+  })
+
+  await page.goto('./')
+  await page.getByRole('button', { name: '시작하기' }).click()
+  await page.getByRole('button', { name: '건너뛰기' }).click()
+
+  await expect(page.getByText('1/3', { exact: true })).toBeVisible()
+  expect(sessionRequestCount).toBe(1)
+
+  await page.getByRole('button', { name: '건너뛰기' }).click()
+  await expect(
+    page.getByRole('heading', { name: VOICE_QUESTIONS[0].title }),
+  ).toBeVisible()
+  await expect(page.getByRole('button', { name: '말하기' })).toBeEnabled()
+  expect(sessionRequestCount).toBe(2)
+})

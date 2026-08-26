@@ -48,6 +48,6 @@ export function parseSessionResponse(payload: unknown): SessionApiResponse {
 export async function createVoiceSession(
   signal?: AbortSignal,
 ): Promise<SessionApiResponse> {
-  const payload = await postJson('/api/sessions', {}, signal)
+  const payload = await postJson('/api/sessions', {}, signal, 120_000)
   return parseSessionResponse(payload)
 }

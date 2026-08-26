@@ -156,7 +156,7 @@ export async function fetchVoiceRecommendations(
     `/api/sessions/${encodeURIComponent(sessionId)}/voice-recommendations`,
     {},
     signal,
-    90_000,
+    120_000,
   )
   const response = parseRecommendationResponse(payload)
 
