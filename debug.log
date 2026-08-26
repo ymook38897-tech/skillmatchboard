@@ -1,0 +1,6 @@
+[0826/115511.173:WARNING:services\audio\sync_reader.cc:154] ASR: No room in socket buffer.: 파이프가 닫히는 중입니다. (0xE8)
+[0826/115728.616:WARNING:services\audio\sync_reader.cc:154] ASR: No room in socket buffer.: 파이프가 닫히는 중입니다. (0xE8)
+[0826/115731.200:WARNING:services\audio\sync_reader.cc:154] ASR: No room in socket buffer.: 파이프가 닫히는 중입니다. (0xE8)
+[0826/115919.932:WARNING:services\audio\sync_reader.cc:154] ASR: No room in socket buffer.: 파이프가 닫히는 중입니다. (0xE8)
+[0826/115923.862:WARNING:services\audio\sync_reader.cc:154] ASR: No room in socket buffer.: 파이프가 닫히는 중입니다. (0xE8)
+[0826/120107.190:WARNING:services\audio\sync_reader.cc:154] ASR: No room in socket buffer.: 파이프가 닫히는 중입니다. (0xE8)

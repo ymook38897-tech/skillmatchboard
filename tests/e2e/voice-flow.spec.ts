@@ -58,7 +58,7 @@ async function recordAndSubmit(
       const body = request.postDataJSON() as { questionKey?: string } | null
       return body?.questionKey === question.key
     },
-    { timeout: 30_000 },
+    { timeout: 125_000 },
   )
 
   await stopButton.click()
@@ -91,6 +91,8 @@ async function recordAndSubmit(
 test('Tutorial skip부터 Resume과 처음 화면 복귀까지 실제 Render flow가 동작한다', async ({
   page,
 }) => {
+  test.setTimeout(420_000)
+
   await page.goto('./')
   await expect(
     page.getByRole('heading', { name: '희망직종 찾기' }),
@@ -190,4 +192,73 @@ test('Tutorial 1/3부터 3/3까지 진행한 뒤 첫 질문으로 이동한다',
   await expect(
     page.getByRole('heading', { name: '버튼 설명' }),
   ).toHaveCount(0)
+})
+
+test('녹음 시작 후 5초 동안 말이 없으면 STT 요청 없이 다시 말하기를 안내한다', async ({
+  page,
+}) => {
+  await page.addInitScript(() => {
+    class SilentAudioContext {
+      state = 'running'
+      sampleRate = 48_000
+
+      createMediaStreamSource() {
+        return {
+          connect() {},
+          disconnect() {},
+        }
+      }
+
+      createAnalyser() {
+        return {
+          fftSize: 2_048,
+          getFloatTimeDomainData(samples: Float32Array) {
+            samples.fill(0)
+          },
+        }
+      }
+
+      async resume() {}
+      async close() {}
+    }
+
+    Object.defineProperty(window, 'AudioContext', {
+      configurable: true,
+      value: SilentAudioContext,
+    })
+  })
+
+  await page.route('**/api/sessions', async (route) => {
+    await route.fulfill({
+      status: 201,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        sessionId: 'silent-session',
+        createdAt: new Date().toISOString(),
+        expiresAt: new Date(Date.now() + 120_000).toISOString(),
+        idleTimeoutSeconds: 120,
+        maxTtlSeconds: 1_200,
+      }),
+    })
+  })
+
+  let voiceAnswerRequestCount = 0
+  page.on('request', (request) => {
+    if (request.url().endsWith('/voice-answers')) {
+      voiceAnswerRequestCount += 1
+    }
+  })
+
+  await page.goto('./')
+  await page.getByRole('button', { name: '시작하기' }).click()
+  await page.getByRole('button', { name: '건너뛰기' }).click()
+  await page.getByRole('button', { name: '말하기' }).click()
+
+  await expect(
+    page.getByRole('heading', { name: '목소리를 듣지 못했어요' }),
+  ).toBeVisible({ timeout: 7_000 })
+  await expect(
+    page.getByRole('button', { name: '다시 말하기' }),
+  ).toBeVisible()
+  expect(voiceAnswerRequestCount).toBe(0)
 })

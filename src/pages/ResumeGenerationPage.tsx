@@ -48,21 +48,21 @@ export function ResumeGenerationPage({
   return (
     <div className="voice-flow-page min-h-[100svh] bg-[#EEF1F4]">
       <main className="mx-auto w-full max-w-[800px] bg-white sm:rounded-[24px]">
-        <div className="min-h-[100svh] px-[clamp(24px,8vw,64px)] pb-12 pt-[clamp(88px,11.7svh,150px)]">
+        <div className="min-h-[100svh] px-[clamp(24px,8vw,64px)] pb-6 pt-[clamp(72px,7.5svh,96px)]">
           <header className="text-center">
             <h1 className="whitespace-pre-line text-[clamp(32px,5vw,40px)] font-extrabold leading-[1.3] tracking-[-0.035em] text-[#111827]">
               {'구직신청서에\n희망직종을 적어 주세요'}
             </h1>
           </header>
 
-          <section className="relative mx-auto mt-[clamp(68px,8.6svh,110px)] min-h-[780px] max-w-[570px] border border-[#9CA3AF] bg-[#FCFCFC] px-[clamp(14px,2.5vw,20px)] py-5 text-[#4B5563] shadow-[0_2px_8px_rgba(15,23,42,0.08)]">
+          <section className="relative mx-auto mt-[clamp(44px,5svh,64px)] min-h-[780px] max-w-[570px] border border-[#9CA3AF] bg-[#FCFCFC] px-[clamp(14px,2.5vw,20px)] py-4 text-[#4B5563] shadow-[0_2px_8px_rgba(15,23,42,0.08)]">
             <div className="border-b-2 border-[#6B7280] pb-3 text-center">
               <h2 className="text-[clamp(18px,2.5vw,20px)] font-extrabold tracking-[0.18em] text-[#374151]">
                 구 직 신 청 서
               </h2>
             </div>
 
-            <div className="mt-3 grid grid-cols-[88px_1fr_76px_1fr] border-l border-t border-[#AEB4BE] text-[clamp(10px,1.5vw,12px)] leading-[1.45]">
+            <div className="mt-2 grid grid-cols-[88px_1fr_76px_1fr] border-l border-t border-[#AEB4BE] text-[clamp(10px,1.5vw,12px)] leading-[1.45]">
               <div className="border-b border-r border-[#AEB4BE] bg-[#F0F1F3] px-2 py-3 font-bold">
                 성명
               </div>
@@ -152,14 +152,14 @@ export function ResumeGenerationPage({
             </div>
           </section>
 
-          <p className="mt-[clamp(28px,3.5svh,44px)] text-center text-[clamp(15px,2.25vw,18px)] font-medium text-[#6B7280]">
+          <p className="mt-[clamp(20px,2svh,26px)] text-center text-[clamp(15px,2.25vw,18px)] font-medium text-[#6B7280]">
             2분 동안 화면에 표시됩니다
           </p>
 
           <button
             type="button"
             onClick={onComplete}
-            className="mx-auto mt-[clamp(24px,3svh,38px)] block h-[clamp(68px,7.5svh,96px)] w-full max-w-[570px] rounded-[8px] bg-[#2468F2] text-[clamp(22px,3.5vw,28px)] font-extrabold text-white focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#93B4FF]"
+            className="mx-auto mt-[clamp(20px,2svh,26px)] block h-[clamp(68px,7.5svh,96px)] w-full max-w-[570px] rounded-[8px] bg-[#2468F2] text-[clamp(22px,3.5vw,28px)] font-extrabold text-white focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#93B4FF]"
           >
             처음으로 돌아가기
           </button>

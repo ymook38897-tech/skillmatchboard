@@ -84,6 +84,7 @@ export type VoiceQuestionId =
 export type VoiceQuestionStatus =
   | 'idle'
   | 'recording'
+  | 'processing'
   | 'success'
   | 'error'
   | 'microphone-error'

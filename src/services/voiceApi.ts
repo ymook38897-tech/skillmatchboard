@@ -110,7 +110,7 @@ export async function submitVoiceAnswer(
     `/api/sessions/${encodeURIComponent(sessionId)}/voice-answers`,
     request,
     signal,
-    90_000,
+    120_000,
   )
   const response = parseVoiceAnswerResponse(payload)
 

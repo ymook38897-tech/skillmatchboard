@@ -148,7 +148,7 @@ export function VoiceQuestionPage({
     isStoppingRef.current = false
   }
 
-  const stopRecording = () => {
+  const stopRecording = (shouldSubmit = true) => {
     const recorder = mediaRecorderRef.current
     if (
       !recorder ||
@@ -159,9 +159,10 @@ export function VoiceQuestionPage({
     }
 
     isStoppingRef.current = true
-    shouldSubmitOnStopRef.current = true
+    shouldSubmitOnStopRef.current = shouldSubmit
     stopMonitoring()
     recorder.stop()
+    if (shouldSubmit) setStatus('processing')
   }
 
   const submitRecording = async (
@@ -263,6 +264,7 @@ export function VoiceQuestionPage({
       !sessionId ||
       isSessionPreparing ||
       isSubmitting ||
+      status === 'processing' ||
       isStartingRef.current ||
       isStoppingRef.current
     ) {
@@ -347,6 +349,7 @@ export function VoiceQuestionPage({
 
       const samples = new Float32Array(analyser.fftSize)
       let lastSoundAt = performance.now()
+      let hasDetectedSpeech = false
       const monitorSilence = () => {
         if (
           mediaRecorderRef.current !== recorder ||
@@ -361,9 +364,19 @@ export function VoiceQuestionPage({
         const rms = Math.sqrt(sumOfSquares / samples.length)
         const now = performance.now()
 
-        if (rms >= SILENCE_THRESHOLD) lastSoundAt = now
+        if (rms >= SILENCE_THRESHOLD) {
+          hasDetectedSpeech = true
+          lastSoundAt = now
+        }
         if (now - lastSoundAt >= SILENCE_DURATION_MS) {
-          stopRecording()
+          if (hasDetectedSpeech) {
+            stopRecording()
+          } else {
+            // 처음부터 5초 동안 말이 없었다면 빈 녹음을 STT로 보내지 않고
+            // 즉시 다시 말하기 화면을 보여준다.
+            stopRecording(false)
+            setStatus('error')
+          }
           return
         }
 
@@ -420,7 +433,14 @@ export function VoiceQuestionPage({
   }, [])
 
   const handleMicClick = () => {
-    if (!sessionId || isSessionPreparing || isSubmitting) return
+    if (
+      !sessionId ||
+      isSessionPreparing ||
+      isSubmitting ||
+      status === 'processing'
+    ) {
+      return
+    }
     if (status === 'recording') {
       stopRecording()
       return
@@ -429,7 +449,12 @@ export function VoiceQuestionPage({
   }
 
   const handleRetry = () => {
-    if (sessionId && !isSessionPreparing && !isSubmitting) {
+    if (
+      sessionId &&
+      !isSessionPreparing &&
+      !isSubmitting &&
+      status !== 'processing'
+    ) {
       void startRecording()
     }
   }
@@ -441,9 +466,14 @@ export function VoiceQuestionPage({
   if (!question) return null
 
   const showAnswer = Boolean(currentAnswer) && status === 'success'
+  const isProcessing = status === 'processing'
   const showCurrentAnswer =
-    Boolean(currentAnswer) && isEditMode && status !== 'success'
-  const showFooter = status === 'error' || showAnswer || isEditMode
+    Boolean(currentAnswer) &&
+    isEditMode &&
+    status !== 'success' &&
+    !isProcessing
+  const showFooter =
+    status === 'error' || showAnswer || (isEditMode && !isProcessing)
   const hasMicrophoneError = status === 'microphone-error'
 
   return (
@@ -454,7 +484,7 @@ export function VoiceQuestionPage({
             {Array.from({ length: totalQuestions }, (_, index) => {
               const segmentOrder = index + 1
               const isComplete = segmentOrder <= currentOrder
-              const canGoBack = segmentOrder < currentOrder
+              const canGoBack = segmentOrder < currentOrder && !isProcessing
 
               return (
                 <button
@@ -476,6 +506,7 @@ export function VoiceQuestionPage({
         </header>
 
         <section
+          aria-busy={isProcessing}
           className={`flex flex-1 flex-col items-center px-[clamp(24px,10vw,80px)] text-center ${
             showFooter
               ? 'pb-[clamp(180px,19svh,244px)]'
@@ -483,7 +514,11 @@ export function VoiceQuestionPage({
           }`}
         >
           <h1 className="mt-[clamp(64px,7.5svh,96px)] text-[clamp(28px,5vw,40px)] font-extrabold leading-[1.28] tracking-[-0.035em] text-[#111827]">
-            {status === 'error' ? '목소리를 듣지 못했어요' : question.title}
+            {status === 'error'
+              ? '목소리를 듣지 못했어요'
+              : isProcessing
+                ? '답변을 확인하고 있어요'
+                : question.title}
           </h1>
 
           {isEditMode && (
@@ -498,46 +533,64 @@ export function VoiceQuestionPage({
             </p>
           )}
 
-          <button
-            type="button"
-            aria-label={
-              isSubmitting
-                ? '음성 인식 처리 중'
-                : isSessionPreparing
-                  ? '음성 세션 준비 중'
-                : status === 'recording'
-                  ? '녹음 끝내기'
-                  : '말하기'
-            }
-            onClick={handleMicClick}
-            disabled={!sessionId || isSessionPreparing || isSubmitting}
-            className={`relative ${
-              isEditMode
-                ? 'mt-[clamp(32px,4svh,52px)]'
-                : 'mt-[clamp(96px,13svh,166px)]'
-            } flex size-[clamp(148px,27vw,216px)] shrink-0 items-center justify-center rounded-full transition-colors focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-offset-4 ${
-              status === 'recording'
-                ? 'border-[3px] border-[#2468F2] bg-[#2468F2] text-white shadow-[0_0_0_16px_rgba(36,104,242,0.10),0_0_0_32px_rgba(36,104,242,0.05)] focus-visible:ring-[#93B4FF]'
-                : status === 'error' || hasMicrophoneError
-                  ? 'border-[3px] border-[#FF8B8B] bg-[#FFF4F4] text-[#F04444] focus-visible:ring-[#FFC9C9]'
-                  : 'border-[3px] border-[#8EB4FF] bg-white text-[#2468F2] focus-visible:ring-[#93B4FF]'
-            }`}
-          >
-            <MicrophoneIcon className="size-[clamp(58px,9vw,72px)]" />
-          </button>
-
-          {status === 'recording' ? (
-            <div className="mt-[clamp(48px,6svh,76px)]">
-              <VoiceWaveform />
-              <span className="sr-only">{(recordingTime / 10).toFixed(1)}초</span>
+          {isProcessing ? (
+            <div
+              role="status"
+              aria-live="polite"
+              className="mt-[clamp(96px,13svh,166px)] flex flex-col items-center"
+            >
+              <span
+                aria-hidden="true"
+                className="size-[clamp(72px,12vw,96px)] animate-spin rounded-full border-[6px] border-[#D6E4FF] border-t-[#2468F2]"
+              />
+              <p className="mt-[clamp(42px,5.5svh,70px)] text-[clamp(20px,3.25vw,26px)] font-extrabold text-[#526077]">
+                잠시만 기다려 주세요
+              </p>
             </div>
-          ) : status !== 'error' && !hasMicrophoneError ? (
-            <p className="mt-[clamp(42px,5.5svh,70px)] whitespace-pre-line text-[clamp(20px,3.25vw,26px)] font-extrabold leading-[1.45] text-[#2468F2]">
-              {status === 'success'
-                ? '수정하시려면\n다시 버튼을 눌러주세요'
-                : '버튼을 눌러주세요'}
-            </p>
-          ) : null}
+          ) : (
+            <>
+              <button
+                type="button"
+                aria-label={
+                  isSessionPreparing
+                    ? '음성 세션 준비 중'
+                    : status === 'recording'
+                      ? '녹음 끝내기'
+                      : '말하기'
+                }
+                onClick={handleMicClick}
+                disabled={!sessionId || isSessionPreparing || isSubmitting}
+                className={`relative ${
+                  isEditMode
+                    ? 'mt-[clamp(32px,4svh,52px)]'
+                    : 'mt-[clamp(96px,13svh,166px)]'
+                } flex size-[clamp(148px,27vw,216px)] shrink-0 items-center justify-center rounded-full transition-colors focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-offset-4 ${
+                  status === 'recording'
+                    ? 'border-[3px] border-[#2468F2] bg-[#2468F2] text-white shadow-[0_0_0_16px_rgba(36,104,242,0.10),0_0_0_32px_rgba(36,104,242,0.05)] focus-visible:ring-[#93B4FF]'
+                    : status === 'error' || hasMicrophoneError
+                      ? 'border-[3px] border-[#FF8B8B] bg-[#FFF4F4] text-[#F04444] focus-visible:ring-[#FFC9C9]'
+                      : 'border-[3px] border-[#8EB4FF] bg-white text-[#2468F2] focus-visible:ring-[#93B4FF]'
+                }`}
+              >
+                <MicrophoneIcon className="size-[clamp(58px,9vw,72px)]" />
+              </button>
+
+              {status === 'recording' ? (
+                <div className="mt-[clamp(48px,6svh,76px)]">
+                  <VoiceWaveform />
+                  <span className="sr-only">
+                    {(recordingTime / 10).toFixed(1)}초
+                  </span>
+                </div>
+              ) : status !== 'error' && !hasMicrophoneError ? (
+                <p className="mt-[clamp(42px,5.5svh,70px)] whitespace-pre-line text-[clamp(20px,3.25vw,26px)] font-extrabold leading-[1.45] text-[#2468F2]">
+                  {status === 'success'
+                    ? '수정하시려면\n다시 버튼을 눌러주세요'
+                    : '버튼을 눌러주세요'}
+                </p>
+              ) : null}
+            </>
+          )}
 
           {status === 'idle' && !isEditMode && (
             <div className="mt-[clamp(42px,5svh,64px)] space-y-2 text-[clamp(15px,2.4vw,19px)] font-medium leading-[1.45] text-[#697386]">
