@@ -68,6 +68,13 @@ export interface VoiceAnswerApiRequest {
   audio: VoiceAudioApiPayload
 }
 
+export interface MatchedCertification {
+  code: string
+  name: string
+  grade?: string | null
+  kind?: string | null
+}
+
 export interface VoiceAnswerApiResponse {
   sessionId: string
   questionKey: VoiceQuestionKey
@@ -76,6 +83,7 @@ export interface VoiceAnswerApiResponse {
   keywords?: string[]
   confidence?: number
   answeredAt?: string
+  matchedCertifications?: MatchedCertification[]
 }
 
 export interface VoiceRecommendationApiJob {

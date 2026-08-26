@@ -24,9 +24,6 @@ import { fetchVoiceRecommendations } from './services/recommendationApi'
 import { createVoiceSession } from './services/sessionApi'
 import { QUESTION_ID_MAP } from './services/voiceApi'
 
-// 자격증 후보 API 계약이 확정되기 전까지 운영 화면에 임의 목록을 노출하지 않는다.
-const CERTIFICATION_CANDIDATES: CertificationCandidate[] = []
-
 function createInitialAnswers(): VoiceInterviewAnswers {
   return {
     difficulty: '',
@@ -49,6 +46,7 @@ export function App() {
   const [selectedJobs, setSelectedJobs] = useState<VoiceJob[]>([])
   const [currentQuestionOrder, setCurrentQuestionOrder] = useState(1)
   const [editingQuestionId, setEditingQuestionId] = useState<VoiceQuestionId | null>(null)
+  const [certificationCandidates, setCertificationCandidates] = useState<CertificationCandidate[]>([])
   const [selectedCertificationId, setSelectedCertificationId] = useState<string | null>(null)
   const [selectedCertificationLabel, setSelectedCertificationLabel] = useState('')
   const [didSkipCertification, setDidSkipCertification] = useState(false)
@@ -83,6 +81,23 @@ export function App() {
       ...prev,
       [questionId]: answer,
     }))
+
+    // G 질문의 자격증 후보를 CertificationCandidate로 변환
+    if (questionId === 'certificate' && answer.matchedCertifications) {
+      const candidates = answer.matchedCertifications.map((cert) => ({
+        id: cert.code,
+        label: cert.name,
+      }))
+      setCertificationCandidates(candidates)
+
+      // 기존 선택이 새 후보에 없으면 상태 초기화
+      const selectedIdExists = candidates.some((c) => c.id === selectedCertificationId)
+      if (!selectedIdExists) {
+        setSelectedCertificationId(null)
+        setSelectedCertificationLabel('')
+        setDidSkipCertification(false)
+      }
+    }
   }
 
   const createFreshSession = (): Promise<string> => {
@@ -189,6 +204,7 @@ export function App() {
     setAnswerDetails({})
     setRecommendations([])
     setSelectedJobs([])
+    setCertificationCandidates([])
     setCurrentQuestionOrder(1)
     setEditingQuestionId(null)
     setSelectedCertificationId(null)
@@ -332,6 +348,7 @@ export function App() {
     setAnswerDetails({})
     setRecommendations([])
     setSelectedJobs([])
+    setCertificationCandidates([])
     setCurrentQuestionOrder(1)
     setEditingQuestionId(null)
     setSelectedCertificationId(null)
@@ -401,7 +418,7 @@ export function App() {
 
       {currentStep === 'certification-selection' && (
         <VoiceCertificationSelectionPage
-          candidates={CERTIFICATION_CANDIDATES}
+          candidates={certificationCandidates}
           initialSelectedId={selectedCertificationId}
           onPrev={handleCertificationPrev}
           onSkip={handleCertificationSkip}

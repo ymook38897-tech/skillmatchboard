@@ -114,6 +114,12 @@ export interface VoiceAnswerData {
   keywords: string[]
   confidence?: number
   answeredAt?: string
+  matchedCertifications?: Array<{
+    code: string
+    name: string
+    grade?: string | null
+    kind?: string | null
+  }>
 }
 
 export type VoiceInterviewAnswerDetails = Partial<

@@ -230,6 +230,7 @@ export function VoiceQuestionPage({
         keywords: response.keywords ?? [],
         confidence: response.confidence,
         answeredAt: response.answeredAt,
+        matchedCertifications: response.matchedCertifications ?? [],
       })
       setStatus('success')
     } catch (error: unknown) {

@@ -27,6 +27,16 @@ function isVoiceQuestionKey(value: unknown): value is VoiceQuestionKey {
   return value === 'C' || value === 'D' || value === 'E' || value === 'F' || value === 'G'
 }
 
+function isMatchedCertification(value: unknown): value is { code: string; name: string; grade?: string | null; kind?: string | null } {
+  if (!isRecord(value)) return false
+  return (
+    typeof value.code === 'string' &&
+    typeof value.name === 'string' &&
+    (value.grade === undefined || value.grade === null || typeof value.grade === 'string') &&
+    (value.kind === undefined || value.kind === null || typeof value.kind === 'string')
+  )
+}
+
 export function parseVoiceAnswerResponse(
   payload: unknown,
 ): VoiceAnswerApiResponse {
@@ -45,6 +55,7 @@ export function parseVoiceAnswerResponse(
     keywords,
     confidence,
     answeredAt,
+    matchedCertifications,
   } = payload
 
   if (
@@ -76,6 +87,14 @@ export function parseVoiceAnswerResponse(
     )
   }
 
+  if (matchedCertifications !== undefined && !Array.isArray(matchedCertifications)) {
+    throw new ApiRequestError(
+      'INVALID_RESPONSE',
+      '음성 답변 matchedCertifications 형식이 올바르지 않습니다.',
+      { details: payload },
+    )
+  }
+
   return {
     sessionId,
     questionKey,
@@ -86,6 +105,9 @@ export function parseVoiceAnswerResponse(
       : [],
     confidence: typeof confidence === 'number' ? confidence : undefined,
     answeredAt: typeof answeredAt === 'string' ? answeredAt : undefined,
+    matchedCertifications: Array.isArray(matchedCertifications)
+      ? matchedCertifications.filter(isMatchedCertification)
+      : [],
   }
 }
 
